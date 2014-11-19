@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.Iterator;
 
+import com.neocoretechs.bigsack.DBPhysicalConstants;
 import com.neocoretechs.relatrix.Relatrix;
 
 public class ImgLoader {
@@ -31,11 +32,11 @@ public class ImgLoader {
 			while(dirit.hasNext()) {
 				Path targImage = dirit.next();
 				long tim = System.currentTimeMillis();
-				System.out.print("Processing "+targImage.toAbsolutePath().toString());	
+				System.out.println("Processing "+targImage.toAbsolutePath().toString());	
 				float[] a = ImgProcessor.processFile(targImage.toAbsolutePath().toString());
 				String category = targImage.getParent().getFileName().toString();
 				processPayload(a, category);
-				System.out.println("Processed payload in "+(tim-System.currentTimeMillis())+" ms.");
+				System.out.println("Processed payload in "+(System.currentTimeMillis()-tim)+" ms.");
 				++totalRecords;
 				//return;
 			}
@@ -59,14 +60,16 @@ public class ImgLoader {
 					// and the range is category
 					//Comparable rel = 
 					Relatrix.transactionalStore(domain, map, category);
-					//System.out.print("****************STORED "+category+" "+i+"\r");
+					//System.out.println("Going to store "+category+" "+i);
+					//Relatrix.store(domain, map, category);
+					System.out.print("****************STORED "+category+" "+i+"\r");
 				}
 				Relatrix.transactionCommit();
 				System.out.println();
 	}
 	
 	public static void main(String[] args) throws Exception {
-		
+		System.out.println(DBPhysicalConstants.DATASIZE+" "+DBPhysicalConstants.DBLOCKSIZ);
 		Relatrix.setTablespaceDirectory(args[1]);
 		getFiles(args[0]);
 

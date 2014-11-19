@@ -3,6 +3,7 @@
 	<name>MachineVision</name>
 	<comment></comment>
 	<projects>
+		<project>BigSack</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
