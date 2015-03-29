@@ -32,8 +32,13 @@ public class ImgLoader {
 			while(dirit.hasNext()) {
 				Path targImage = dirit.next();
 				long tim = System.currentTimeMillis();
-				System.out.println("Processing "+targImage.toAbsolutePath().toString());	
-				float[] a = ImgProcessor.processFile(targImage.toAbsolutePath().toString());
+				System.out.println("Processing "+targImage.toAbsolutePath().toString());
+				// processfile2 uses static array of floats to reduce object creation overhead
+				// since we scale the image to 512x512 the 'doubleheight', which represents the max range of the
+				//'radius' values in the transform is constant, and the other value, theta, is preset at 256
+				// for this model. So 256 increments of arc for one sinus cycle of hough transform covering
+				// the interval from zero to pi
+				float[] a = ImgProcessor.processFile2(targImage.toAbsolutePath().toString());
 				String category = targImage.getParent().getFileName().toString();
 				processPayload(a, category);
 				System.out.println("Processed payload in "+(System.currentTimeMillis()-tim)+" ms.");
@@ -54,7 +59,7 @@ public class ImgLoader {
 	 * @throws IllegalAccessException 
 	 */
 	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException {
-				for(int i = 0; i < a.length; i++) {
+				for(int i = 0; i < 65536; i++) {
 					Float domain = new Float(a[i]);
 					Integer map = new Integer(i);
 					// and the range is category
@@ -69,9 +74,20 @@ public class ImgLoader {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		System.out.println(DBPhysicalConstants.DATASIZE+" "+DBPhysicalConstants.DBLOCKSIZ);
-		Relatrix.setTablespaceDirectory(args[1]);
-		getFiles(args[0]);
+		System.out.println("Image loader coming up..blocksize:"+DBPhysicalConstants.DBLOCKSIZ+" args "+args.length);
+		if(args.length == 2) {
+			Relatrix.setTablespaceDirectory(args[1]);
+			getFiles(args[0]);
+		} else {
+			if( args.length == 3 ) {
+				Relatrix.setRemoteDirectory(args[2]);
+				Relatrix.setTablespaceDirectory(args[1]);
+				System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory()+" remote dir "+Relatrix.getRemoteDirectory());
+				getFiles(args[0]);
+			} else {
+				System.out.println("Usage: java ImgLoader <dir with image files> <db log dir> [remote tablespace dir]");
+			}
+		}
 
 	}
 }

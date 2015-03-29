@@ -15,7 +15,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -29,7 +28,14 @@ import org.jtransforms.utils.IOUtils;
 public class ImgProcessor {
 	
 	public static final int INBUF_SIZE = 65535;
-
+	private static float[] coeffs = null;
+	
+	private static void createArrayBuffer(HoughTransform ht) {
+		coeffs = HoughTransform.createLinearArray(ht);
+	}
+	
+	public ImgProcessor(String[] args) {
+	}
 	/**
 	 * @param args
 	 */
@@ -79,15 +85,12 @@ public class ImgProcessor {
 					c[i]=a[i];
 				}
 				fis.close();
-				System.out.println("RMSE:"+IOUtils.computeRMSE(c, b, rmsFile));
+				System.out.println("RMSE:"+IOUtils.computeRMSE(c, b, 0, c.length, rmsFile));
 			} catch (FileNotFoundException e1) {
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 		} // if
-	}
-	public ImgProcessor(String[] args) {
-	
 	}
 	
 	
@@ -163,20 +166,65 @@ public class ImgProcessor {
 	    //System.out.println("Stop. Sum="+summ);  
 	    return coeff;
 	}
+	/**
+	 * Use the encapsulated array coeffs to reduce overhead
+	 * @param filename
+	 */
+	public static float[] processFile2(String filename) {
+		float summ = 0;
+	    FileInputStream fin = null;
+	    File f = new File(filename);
+	    try {
+
+		    fin = new FileInputStream(f);
+		    BufferedImage oimg = ImageIO.read(f);
+		    BufferedImage img = resizeImage(oimg, 512, 512);
+			//displayPanel.lastFrame = img;
+		    CannyEdgeDetector ced = new CannyEdgeDetector();
+		    //BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+		    // Draw the image on to the buffered image
+		    //Graphics2D bGr = bimage.createGraphics();
+		    //bGr.drawImage(img, 0, 0, null);
+		    //bGr.dispose();
+		    // Return the buffered image
+		    //return bimage;
+		    System.out.println(img.getWidth(null)+" "+img.getHeight(null)+" "+img.getWidth()+" "+img.getHeight());
+		    ced.setSourceImage(img);
+		    ced.process();
+		    int[] pced = ced.getPixelData();
+		    //displayPanel.lastFrame = ced.getEdgesImage();
+	        HoughTransform h = new HoughTransform(img.getWidth(), img.getHeight()); 
+	        if( coeffs == null ) {
+	        	ImgProcessor.createArrayBuffer(h); // allocate the buffer based on image size set up in hough
+	        }
+	        // add the points from the image (or call the addPoint method separately if your points are not in an image 
+	        h.addPoints((BufferedImage) ced.getEdgesImage()); 
+			FloatDCT_2D fdct2d = new FloatDCT_2D(h.getRows(), h.getColumns());
+			h.getLinearArray(coeffs);
+			System.out.println("Linear Array: "+coeffs.length+" hough max:"+h.getHighestValue());
+			fdct2d.inverse(coeffs, false);
+	
+	    } catch(Exception e) {
+	    	e.printStackTrace();
+	    } finally {
+	    	try { fin.close(); } catch(Exception ee) {}
+	    } // try
+	    return coeffs;
+	    //System.out.println("Stop. Sum="+summ);  
+	}
 	  /**
      * This function resize the image file and returns the BufferedImage object that can be saved to file system.
      */
     public static BufferedImage resizeImage(final Image image, int width, int height) {
-    final BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-    final Graphics2D graphics2D = bufferedImage.createGraphics();
-    graphics2D.setComposite(AlphaComposite.Src);
-    graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-    graphics2D.setRenderingHint(RenderingHints.KEY_RENDERING,RenderingHints.VALUE_RENDER_QUALITY);
-    graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
-    graphics2D.drawImage(image, 0, 0, width, height, null);
-    graphics2D.dispose();
-
-    return bufferedImage;
-}
+    	final BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    	final Graphics2D graphics2D = bufferedImage.createGraphics();
+    	graphics2D.setComposite(AlphaComposite.Src);
+    	graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+    	graphics2D.setRenderingHint(RenderingHints.KEY_RENDERING,RenderingHints.VALUE_RENDER_QUALITY);
+    	graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+    	graphics2D.drawImage(image, 0, 0, width, height, null);
+    	graphics2D.dispose();
+    	return bufferedImage;
+    }
 
 }

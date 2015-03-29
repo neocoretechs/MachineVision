@@ -300,6 +300,20 @@ public class HoughTransform extends Thread {
         } 
     	return a;  	
     }
+    
+    public static float[] createLinearArray(HoughTransform ht) {
+       	return new float[ht.doubleHeight*ht.maxTheta];
+    }
+    
+	public void getLinearArray(float[] coeff) {
+	   	System.out.println("Hough linear array. double height: "+doubleHeight+", maxTheta: "+maxTheta);
+        for (int t = 0; t < maxTheta; t++) { 
+            for (int r = 0; r < doubleHeight; r++) { 
+                //System.out.println("index:"+(t*doubleHeight+r)+"t="+t+" r="+r+" hough:"+houghArray[t][r]);
+                coeff[t*doubleHeight+r] = houghArray[t][r]; 
+            } 
+        }	
+	}
  
 } 
  
