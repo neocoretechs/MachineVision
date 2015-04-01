@@ -79,23 +79,23 @@ public class ImgRecognizer {
 	 */
 	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException {
 		System.out.println("Attempting to recognize image from category: "+category);
-				for(int i = 0; i < 65536; i++) {
+				for(int i = 0; i < 65535; i++) {
 					Integer map = new Integer(i);
+					Integer mape = new Integer(i+1);
 					// and the range is category
 					//Comparable rel = 
 					try {
-						Iterator<?> it = Relatrix.findSet("*", map, "*");
+						Iterator<?> it = Relatrix.findSubSet("?", map, "?", mape);
 						while(it.hasNext()) {
 							Comparable[] res =(Comparable[]) it.next();
-							for(int j=0; j < res.length;j++) {
-								System.out.println("Res:"+j+" "+res[j]);
-							}
-							
-							//Float cosn = (Float)res[0];
-							//String categoryStored = (String)res[1];
-							//b[i] = cosn;
-							//double rms = IOUtils.computeRMSE(a, b, 0, i);
-							//System.out.println("Index:"+i+" RMS:"+rms+"  Retrieved:"+categoryStored+" Target:"+category+" map:"+map+" cos:");
+							//for(int j=0; j < res.length;j++) {
+							//	System.out.println("Res:"+j+" "+res[j]);
+							//}
+							Float cosn = (Float)res[0];
+							String categoryStored = (String)res[1];
+							b[i] = cosn;
+							double rms = IOUtils.computeRMSE(a, b, 0, i+1);
+							System.out.println("Index:"+i+" RMS:"+rms+"  Retrieved:"+categoryStored+" Target:"+category+" cos:"+cosn);
 						}
 					} catch (IllegalArgumentException | ClassNotFoundException e) {
 						e.printStackTrace();
@@ -119,12 +119,17 @@ public class ImgRecognizer {
 				return;
 			}
 		}
+		/*
 		System.out.println("The following categories are present in the dataset:");
 		Iterator<?> it = Relatrix.findSet("*", "*", "?");
+		String tcat="";
 		while(it.hasNext()) {
 			Comparable<?>[] res = (Comparable[]) it.next();
+			if( tcat.equals(res[0]))  continue;
+			tcat = (String) res[0];
 			System.out.println("Category:"+res[0]+" len"+res.length);
 		}
+		*/
 		getFiles(args[0]);
 	}
 }
