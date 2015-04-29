@@ -11,11 +11,9 @@ public static void main(String[] args) throws Exception {
 	int cnt = 0;
 	while(iterator.hasNext()) {
 		Comparable[] c = (Comparable[])iterator.next();
-		for(int i = 0; i < c.length; i++) {
-			System.out.println(cnt+" "+((Object)c[i]).toString());
+		System.out.println(cnt+"="+((Object)c[0]).toString()+"->"+((Object)c[1]).toString()+"->"+((Object)c[2]).toString());
 		++cnt;
-		}
 	}
 	System.out.println("Count: "+cnt);
-}
+	}
 }

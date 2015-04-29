@@ -22,12 +22,14 @@ natural transformations we build higher order relationships from freeform data. 
 to use common programming constructs.
  */
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.jtransforms.utils.IOUtils;
@@ -36,7 +38,7 @@ import com.neocoretechs.relatrix.Relatrix;
 
 public class ImgRecognizer {
 	private static float[] b = new float[65536]; // currently we work on a hardwired number of maximum elements from transform
-	
+	private static int catCount = 0;
 	public static void getFiles(String dir) throws IOException, ParseException, IllegalAccessException {
 		int totalRecords = 0;
 		Path path = FileSystems.getDefault().getPath(dir);
@@ -79,30 +81,58 @@ public class ImgRecognizer {
 	 */
 	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException {
 		System.out.println("Attempting to recognize image from category: "+category);
+		ArrayList<Comparable[]> al = new ArrayList<Comparable[]>(65536);
+		int num = 0;
 				for(int i = 0; i < 65535; i++) {
+					num = 0;
 					Integer map = new Integer(i);
 					Integer mape = new Integer(i+1);
+					boolean found = false;
 					// and the range is category
 					//Comparable rel = 
 					try {
 						Iterator<?> it = Relatrix.findSubSet("?", map, "?", mape);
+						Comparable[] lastLow = null;
+						double rmsLow = Double.MAX_VALUE;
+	
 						while(it.hasNext()) {
 							Comparable[] res =(Comparable[]) it.next();
+							++num;
 							//for(int j=0; j < res.length;j++) {
-							//	System.out.println("Res:"+j+" "+res[j]);
+							//	System.out.println("Res #:"+num+" component:"+j+"="+res[j]);
 							//}
 							Float cosn = (Float)res[0];
 							String categoryStored = (String)res[1];
 							b[i] = cosn;
 							double rms = IOUtils.computeRMSE(a, b, 0, i+1);
-							System.out.println("Index:"+i+" RMS:"+rms+"  Retrieved:"+categoryStored+" Target:"+category+" cos:"+cosn);
+							if( rms < rmsLow ) {
+								rmsLow = rms;
+								lastLow = res;
+							} else
+								found = true;
+							//System.out.println("Index:"+i+" RMS:"+rms+"  Retrieved:"+categoryStored+" Target:"+category+" cos:"+cosn);
+						}
+						if( lastLow != null ) {
+							lastLow[0] = rmsLow;
+							al.add(lastLow);
+						} else {
+							if( found )
+								System.out.println("At index "+map+" there are no entries BELOW MAX in category:"+category);
+							else
+								System.out.println("At index "+map+" there are no entries retrieved for category:"+category);
 						}
 					} catch (IllegalArgumentException | ClassNotFoundException e) {
 						e.printStackTrace();
 					}//(domain, map, category);
-					System.out.println("****************Processed "+category+" "+i+"\r");
+					System.out.println("****************Processed "+category+" "+i+" detected "+num+" entries\r");
 				}
 				System.out.println();
+				String fileName = Relatrix.getTableSpaceDirectory()+category+"."+String.valueOf(++catCount);
+				FileOutputStream fos = new FileOutputStream(fileName+".csv");
+				for(int i = 0; i < al.size(); i++) { // significant coefficients for 256 theta by 512 (+1/2 height) high hough
+					fos.write( (((String)al.get(i)[1])+","+(String.valueOf(al.get(i)[0])+"\r\n")).getBytes() );
+				}
+				fos.flush();fos.close();
 	}
 	
 	public static void main(String[] args) throws Exception {
