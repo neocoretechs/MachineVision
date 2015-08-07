@@ -1,12 +1,7 @@
 package com.neocoretechs.machinevision;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -16,8 +11,11 @@ import java.util.Iterator;
 
 import com.neocoretechs.bigsack.DBPhysicalConstants;
 import com.neocoretechs.relatrix.Relatrix;
+import com.neocoretechs.relatrix.client.RelatrixClient;
 
 public class ImgLoader {
+	private static RelatrixClient rc;
+	
 	public static void getFiles(String dir) throws IOException, ParseException, IllegalAccessException {
 		int totalRecords = 0;
 		Path path = FileSystems.getDefault().getPath(dir);
@@ -43,9 +41,9 @@ public class ImgLoader {
 				processPayload(a, category);
 				System.out.println("Processed payload in "+(System.currentTimeMillis()-tim)+" ms.");
 				++totalRecords;
-				//return;
 			}
 		}
+		rc.close();
 		System.out.println("FINISHED! with "+totalRecords+" processed");
 	}
 	/**
@@ -59,29 +57,30 @@ public class ImgLoader {
 	 * @throws IllegalAccessException 
 	 */
 	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException {
-				for(int i = 0; i < 65536; i++) {
+				for(int i = 0; i < 4096; i++) {
 					Float domain = new Float(a[i]);
 					Integer map = new Integer(i);
 					// and the range is category
 					//Comparable rel = 
-					Relatrix.transactionalStore(domain, map, category);
+					//Relatrix.transactionalStore(domain, map, category);
+					rc.transactionalStore(domain,  map,  category);
 					//System.out.println("Going to store "+category+" "+i);
 					//Relatrix.store(domain, map, category);
 					System.out.print("****************STORED "+category+" "+i+"\r");
 				}
-				Relatrix.transactionCommit();
+				//Relatrix.transactionCommit();
+				rc.transactionCommit();
 				System.out.println();
 	}
 	
 	public static void main(String[] args) throws Exception {
 		System.out.println("Image loader coming up..blocksize:"+DBPhysicalConstants.DBLOCKSIZ+" args "+args.length);
 		if(args.length == 2) {
-			Relatrix.setTablespaceDirectory(args[1]);
+			rc = new RelatrixClient(/*"C:/Users/jg/Relatrix/AMI"*/ args[1], "localhost", 9000);
 			getFiles(args[0]);
 		} else {
 			if( args.length == 3 ) {
-				Relatrix.setRemoteDirectory(args[2]);
-				Relatrix.setTablespaceDirectory(args[1]);
+				rc = new RelatrixClient(args[1], args[2],"localhost", 9000);
 				System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory()+" remote dir "+Relatrix.getRemoteDirectory());
 				getFiles(args[0]);
 			} else {
