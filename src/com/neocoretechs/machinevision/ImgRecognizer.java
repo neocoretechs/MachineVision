@@ -35,10 +35,15 @@ import java.util.Iterator;
 import org.jtransforms.utils.IOUtils;
 
 import com.neocoretechs.relatrix.Relatrix;
+import com.neocoretechs.relatrix.client.RelatrixClient;
+import com.neocoretechs.relatrix.client.RemoteSubsetIterator;
 
 public class ImgRecognizer {
-	private static float[] b = new float[65536]; // currently we work on a hardwired number of maximum elements from transform
+	static RelatrixClient rc = null;
+	
+	private static float[] b = new float[4096]; // currently we work on a hardwired number of maximum elements from transform
 	private static int catCount = 0;
+	
 	public static void getFiles(String dir) throws IOException, ParseException, IllegalAccessException {
 		int totalRecords = 0;
 		Path path = FileSystems.getDefault().getPath(dir);
@@ -81,9 +86,9 @@ public class ImgRecognizer {
 	 */
 	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException {
 		System.out.println("Attempting to recognize image from category: "+category);
-		ArrayList<Comparable[]> al = new ArrayList<Comparable[]>(65536);
+		ArrayList<Comparable[]> al = new ArrayList<Comparable[]>(4096);
 		int num = 0;
-				for(int i = 0; i < 65535; i++) {
+				for(int i = 0; i < 4096; i++) {
 					num = 0;
 					Integer map = new Integer(i);
 					Integer mape = new Integer(i+1);
@@ -91,12 +96,12 @@ public class ImgRecognizer {
 					// and the range is category
 					//Comparable rel = 
 					try {
-						Iterator<?> it = Relatrix.findSubSet("?", map, "?", mape);
+						//Iterator<?> it = Relatrix.findSubSet("?", map, "?", mape);
+						RemoteSubsetIterator it = rc.findSubSet("?", map, "?", mape);
 						Comparable[] lastLow = null;
 						double rmsLow = Double.MAX_VALUE;
-	
-						while(it.hasNext()) {
-							Comparable[] res =(Comparable[]) it.next();
+						while(rc.hasNext(it)/*it.hasNext()*/) {
+							Comparable[] res =(Comparable[]) rc.next(it);//it.next();
 							++num;
 							//for(int j=0; j < res.length;j++) {
 							//	System.out.println("Res #:"+num+" component:"+j+"="+res[j]);
@@ -110,8 +115,11 @@ public class ImgRecognizer {
 								lastLow = res;
 							} else
 								found = true;
-							//System.out.println("Index:"+i+" RMS:"+rms+"  Retrieved:"+categoryStored+" Target:"+category+" cos:"+cosn);
+							System.out.println("Index:"+i+" element:"+num+" RMS:"+rms+"  Retrieved:"+categoryStored+" Target:"+category+" cos:"+cosn);
 						}
+						// remove remote object
+						rc.close(it);
+						
 						if( lastLow != null ) {
 							lastLow[0] = rmsLow;
 							al.add(lastLow);
@@ -133,17 +141,21 @@ public class ImgRecognizer {
 					fos.write( (((String)al.get(i)[1])+","+(String.valueOf(al.get(i)[0])+"\r\n")).getBytes() );
 				}
 				fos.flush();fos.close();
+
 	}
 	
 	public static void main(String[] args) throws Exception {
-		System.out.println("Image recognizer coming up.. source image dir "+args[0] != null ? args[0] : "DEFUALT");
+		System.out.println("Image recognizer coming up.. source image dir "+args[0] != null ? args[0] : "DEFAULT");
 		if(args.length == 2) {
-			Relatrix.setTablespaceDirectory(args[1]);
+			//Relatrix.setTablespaceDirectory(args[1]);
+			rc = new RelatrixClient(/*"C:/Users/jg/Relatrix/AMI"*/ args[1], "localhost", 9000);
 		} else {
 			if( args.length == 3 ) {
-				Relatrix.setRemoteDirectory(args[2]);
-				Relatrix.setTablespaceDirectory(args[1]);
-				System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory()+" remote dir "+Relatrix.getRemoteDirectory());
+				//Relatrix.setRemoteDirectory(args[2]);
+				//Relatrix.setTablespaceDirectory(args[1]);
+				rc = new RelatrixClient(args[1], args[2],"localhost", 9000);
+				//System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory()+" remote dir "+Relatrix.getRemoteDirectory());
+				//System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory()+" remote dir "+Relatrix.getRemoteDirectory());
 			} else {
 				System.out.println("Usage: java ImgRecognizer <dir with image files> <db log dir> [remote tablespace dir]");
 				return;
@@ -161,5 +173,6 @@ public class ImgRecognizer {
 		}
 		*/
 		getFiles(args[0]);
+		rc.close(); // close client
 	}
 }
