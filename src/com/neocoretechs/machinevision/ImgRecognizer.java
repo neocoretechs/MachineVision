@@ -30,7 +30,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.jtransforms.utils.IOUtils;
 
@@ -41,8 +44,9 @@ import com.neocoretechs.relatrix.client.RemoteSubsetIterator;
 public class ImgRecognizer {
 	static RelatrixClient rc = null;
 	
-	private static float[] b = new float[4096]; // currently we work on a hardwired number of maximum elements from transform
+	private static float[] b = new float[256]; // currently we work on a hardwired number of maximum elements from transform
 	private static int catCount = 0;
+	private static HashMap<String, ArrayList<Double>> catToRMS = new HashMap<String, ArrayList<Double>>();
 	
 	public static void getFiles(String dir) throws IOException, ParseException, IllegalAccessException {
 		int totalRecords = 0;
@@ -67,6 +71,7 @@ public class ImgRecognizer {
 				float[] a = ImgProcessor.processFile2(targImage.toAbsolutePath().toString());
 				String category = targImage.getParent().getFileName().toString();
 				processPayload(a, category);
+				//computeClosest(a);
 				System.out.println("Processed payload in "+(System.currentTimeMillis()-tim)+" ms.");
 				++totalRecords;
 				//return;
@@ -85,21 +90,26 @@ public class ImgRecognizer {
 	 * @throws IllegalAccessException 
 	 */
 	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException {
-		System.out.println("Attempting to recognize image from category: "+category);
-		ArrayList<Comparable[]> al = new ArrayList<Comparable[]>(4096);
+		//System.out.println("Attempting to recognize image from category: "+category);
+		int elementsToProcess = 255;
+		//ArrayList<Comparable[]> al = new ArrayList<Comparable[]>(256);
 		int num = 0;
-				for(int i = 0; i < 4096; i++) {
+
+				for(int i = 0; i < elementsToProcess; i++) {
 					num = 0;
 					Integer map = new Integer(i);
 					Integer mape = new Integer(i+1);
 					boolean found = false;
 					// and the range is category
 					//Comparable rel = 
+					String lowCat = null;
+					ArrayList<Double> ad = null;
 					try {
 						//Iterator<?> it = Relatrix.findSubSet("?", map, "?", mape);
 						RemoteSubsetIterator it = rc.findSubSet("?", map, "?", mape);
-						Comparable[] lastLow = null;
+						lowCat = null;
 						double rmsLow = Double.MAX_VALUE;
+						float lowCo = Float.MAX_VALUE;
 						while(rc.hasNext(it)/*it.hasNext()*/) {
 							Comparable[] res =(Comparable[]) rc.next(it);//it.next();
 							++num;
@@ -107,42 +117,89 @@ public class ImgRecognizer {
 							//	System.out.println("Res #:"+num+" component:"+j+"="+res[j]);
 							//}
 							Float cosn = (Float)res[0];
-							String categoryStored = (String)res[1];
-							b[i] = cosn;
-							double rms = IOUtils.computeRMSE(a, b, 0, i+1);
+							//String categoryStored = (String)res[1];
+							// scale it based on significance
+							b[i] = (float) ( (((float)i/(float)elementsToProcess) * (a[i]-cosn)) + cosn);
+							//ad.add(cosn);
+							//b[i] = cosn;
+							double rms = IOUtils.computeRMSE(a, b, 0, i+1);//IOUtils.computeMSE(a, b, 0, i+1);
+							//double rms = Math.abs(a[i]-b[i]);
 							if( rms < rmsLow ) {
 								rmsLow = rms;
-								lastLow = res;
+								lowCat = (String) res[1];
+								lowCo = (Float)res[0];
 							} else
 								found = true;
-							System.out.println("Index:"+i+" element:"+num+" RMS:"+rms+"  Retrieved:"+categoryStored+" Target:"+category+" cos:"+cosn);
+							//System.out.println("Index:"+i+" element:"+num+" cat:"+res[1]+" cos:"+a[i]+" "+b[i]+" RMS:"+rms);
 						}
 						// remove remote object
 						rc.close(it);
 						
-						if( lastLow != null ) {
-							lastLow[0] = rmsLow;
-							al.add(lastLow);
+						if( lowCat != null ) {
+							//al.add(lastLow);
+							// tally rms vals by cat
+							ad = catToRMS.get(lowCat);
+							if( ad == null) {
+								ad = new ArrayList<Double>();
+								catToRMS.put(lowCat,  ad);
+							}
+							ad.add((Double)rmsLow);
+							b[i] = lowCo;
+							System.out.println("Cat:"+lowCat+" best for "+category+" "+i+" detected "+num+" entries, RMS:"+rmsLow);
 						} else {
 							if( found )
-								System.out.println("At index "+map+" there are no entries BELOW MAX in category:"+category);
+								throw new IOException("At index "+map+" there are no entries BELOW MAX in category:"+category);
 							else
-								System.out.println("At index "+map+" there are no entries retrieved for category:"+category);
+								throw new IOException("At index "+map+" there are no entries retrieved for category:"+category);
+							
 						}
+						//System.out.println("Processed "+num+" entries for iteration "+i);
+						
 					} catch (IllegalArgumentException | ClassNotFoundException e) {
 						e.printStackTrace();
 					}//(domain, map, category);
-					System.out.println("****************Processed "+category+" "+i+" detected "+num+" entries\r");
+	
 				}
-				System.out.println();
-				String fileName = Relatrix.getTableSpaceDirectory()+category+"."+String.valueOf(++catCount);
+				System.out.println("Occurance by category, total categories processed:"+catToRMS.size());
+				Set<Entry<String, ArrayList<Double>>> es = catToRMS.entrySet();
+				Iterator<Entry<String, ArrayList<Double>>> it = es.iterator();
+				int ic = 0;
+				while(it.hasNext()) {
+					Entry<String, ArrayList<Double>> cata = it.next();
+					ArrayList<Double> cv = cata.getValue();
+					System.out.println(++ic+"="+cata.getKey()+" num:"+cv.size());
+				}
+				/*
+				String fileName = "C:/users/jg/relatrix/"+category+"."+String.valueOf(++catCount);
 				FileOutputStream fos = new FileOutputStream(fileName+".csv");
 				for(int i = 0; i < al.size(); i++) { // significant coefficients for 256 theta by 512 (+1/2 height) high hough
 					fos.write( (((String)al.get(i)[1])+","+(String.valueOf(al.get(i)[0])+"\r\n")).getBytes() );
 				}
 				fos.flush();fos.close();
-
+				*/
+				
 	}
+	
+	/*
+	private static void computeClosest(float[] a) {
+		double rmsLow = Double.MAX_VALUE;
+		Set<Entry<String, ArrayList<Float>>> es = catToRMS.entrySet();
+		Iterator<Entry<String, ArrayList<Float>>> it = es.iterator();
+		String cat = null;
+		while(it.hasNext()) {
+			Entry<String, ArrayList<Float>> cata = it.next();
+			ArrayList<Float> cv = cata.getValue();
+			for(int i = 0; i < 128; i++) b[i] = cv.get(i);
+			double rms = IOUtils.computeRMSE(a, b, 0, 128);
+			System.out.println(cata.getKey()+" RMS:"+rms);
+			if( rms < rmsLow ) {
+				rmsLow = rms;
+				cat = cata.getKey();
+			}
+		}
+		System.out.println("Closest match is:"+cat+" with RMS:"+rmsLow);
+	}
+	*/
 	
 	public static void main(String[] args) throws Exception {
 		System.out.println("Image recognizer coming up.. source image dir "+args[0] != null ? args[0] : "DEFAULT");
@@ -172,6 +229,7 @@ public class ImgRecognizer {
 			System.out.println("Category:"+res[0]+" len"+res.length);
 		}
 		*/
+		//processPayload();
 		getFiles(args[0]);
 		rc.close(); // close client
 	}

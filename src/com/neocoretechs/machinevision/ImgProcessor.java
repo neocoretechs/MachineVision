@@ -2,7 +2,6 @@ package com.neocoretechs.machinevision;
 
 import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
-
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -10,7 +9,6 @@ import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,6 +38,8 @@ public class ImgProcessor {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		int[][] kernal = gaussianNormal(127,19);
+		/*
 		String fileName;
 		PlayerFrame displayPanel;
 		JFrame frame = null;
@@ -91,6 +91,7 @@ public class ImgProcessor {
 				e1.printStackTrace();
 			}
 		} // if
+		*/
 	}
 	
 	
@@ -191,7 +192,7 @@ public class ImgProcessor {
 		    System.out.println(img.getWidth(null)+" "+img.getHeight(null)+" "+img.getWidth()+" "+img.getHeight());
 		    ced.setSourceImage(img);
 		    ced.process();
-		    int[] pced = ced.getPixelData();
+		    //int[] pced = ced.getPixelData();
 		    //displayPanel.lastFrame = ced.getEdgesImage();
 	        HoughTransform h = new HoughTransform(img.getWidth(), img.getHeight()); 
 	        if( coeffs == null ) {
@@ -226,5 +227,46 @@ public class ImgProcessor {
     	graphics2D.dispose();
     	return bufferedImage;
     }
+    /**
+     * Generate a 2D gaussian norm distribution based on A
+     * @param A Amplitude (maximum height) of center of matrix
+     * @param dim The dimensions of the array, if not odd number, it will be coerced into one
+     * @return 2D array of dim x dim gaussian distribution elements with A at center
+     */
+    public static int[][] gaussianNormal(double A, int dim) {
+    	double x,y;
+		double p;
+		int cx = 0,cy = 0;
+		if( (dim & 1) != 1 ) ++dim;
+		int[][] res = new int[dim][dim];
+		int corrLeft = (int) Math.floor(dim/2);
+		int corrRight = corrLeft + 1;
+		System.out.println("gaussian distro dims L,R:"+corrLeft+","+corrRight);
+		// outer loop i is for x elements
+		for(int i = -corrLeft; i < corrRight; i++) {
+			cy = 0;
+			x = ((double)i)/10;
+			// inner loop j for y elements
+			for(int j = -corrLeft; j < corrRight; j++) {
+				y = ((double)j)/10;
+				// 2d gaussian normal mu=0 sigma=1
+				p = A * Math.exp(-( ((x*x)/2) + ((y*y)/2) ));
+				res[cx][cy++] = (int)p;
+				//System.out.print((int)p);
+				//System.out.print(" ");
+			}
+			++cx;
+			//System.out.println();
+		}
+		for(int i = 0; i < dim; i++) {
+			for(int j = 0; j < dim; j++)
+				System.out.print(res[i][j]+" ");
+			System.out.println();
+		}
+		System.out.println();
+		return res;
+    }
+    
+    
 
 }

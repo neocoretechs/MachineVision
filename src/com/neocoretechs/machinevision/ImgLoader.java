@@ -57,7 +57,7 @@ public class ImgLoader {
 	 * @throws IllegalAccessException 
 	 */
 	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException {
-				for(int i = 0; i < 4096; i++) {
+				for(int i = 0; i < 256; i++) {
 					Float domain = new Float(a[i]);
 					Integer map = new Integer(i);
 					// and the range is category
