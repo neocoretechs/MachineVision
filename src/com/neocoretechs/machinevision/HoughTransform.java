@@ -45,7 +45,7 @@ import java.io.File;
  * @author Olly Oechsle, University of Essex 
  */ 
  
-public class HoughTransform extends Thread { 
+public class HoughTransform { 
  
     public static void main(String[] args) throws Exception { 
         String filename = args[0]; 
@@ -60,11 +60,11 @@ public class HoughTransform extends Thread {
         h.addPoints(image); 
  
         // get the lines out 
-        Vector<HoughLine> lines = h.getLines(30); 
+        Vector<? extends HoughElem> lines = h.getLines(30); 
  
         // draw the lines back onto the image 
         for (int j = 0; j < lines.size(); j++) { 
-            HoughLine line = lines.elementAt(j); 
+            HoughLine line = (HoughLine) lines.elementAt(j); 
             line.draw(image, Color.RED.getRGB()); 
         } 
     } 
@@ -82,7 +82,7 @@ public class HoughTransform extends Thread {
     protected int width, height; 
  
     // the hough array 
-    protected int[][] houghArray; 
+    private int[][] houghArray; 
  
     // the coordinates of the centre of the image 
     protected float centerX, centerY; 
@@ -97,8 +97,8 @@ public class HoughTransform extends Thread {
     protected int numPoints; 
  
     // cache of values of sin and cos for different theta values. Has a significant performance improvement. 
-    private double[] sinCache; 
-    private double[] cosCache; 
+    protected double[] sinCache; 
+    protected double[] cosCache; 
     
     //public int getSlices() { return maxTheta; }
     public int getRows() { return maxTheta; }
@@ -106,28 +106,26 @@ public class HoughTransform extends Thread {
     public int[][] getHoughArray() { return houghArray; }
  
     /** 
-     * Initialises the hough transform. The dimensions of the input image are needed 
-     * in order to initialise the hough array. 
+     * Initializes the hough transform. The dimensions of the input image are needed 
+     * in order to initialize the hough array. 
      * 
      * @param width  The width of the input image 
      * @param height The height of the input image 
      */ 
     public HoughTransform(int width, int height) { 
- 
         this.width = width; 
         this.height = height; 
- 
-        initialise(); 
- 
+        initialize(); 
     } 
  
+    public HoughTransform() {}
     /** 
      * Initialises the hough array. Called by the constructor so you don't need to call it 
      * yourself, however you can use it to reset the transform if you want to plug in another 
      * image (although that image must have the same width and height) 
      */ 
-    public void initialise() { 
- 
+    public void initialize() { 
+    	System.out.println("Hough init..");
         // Calculate the maximum height the hough array needs to have 
         houghHeight = (int) (Math.sqrt(2) * Math.max(height, width)) / 2; 
  
@@ -146,7 +144,7 @@ public class HoughTransform extends Thread {
  
         // cache the values of sin and cos for faster processing 
         sinCache = new double[maxTheta]; 
-        cosCache = sinCache.clone(); 
+        cosCache = new double[maxTheta]; 
         for (int t = 0; t < maxTheta; t++) { 
             double realTheta = t * thetaStep; 
             sinCache[t] = Math.sin(realTheta); 
@@ -178,7 +176,7 @@ public class HoughTransform extends Thread {
      * if your data isn't represented as a buffered image. 
      */ 
     public void addPoint(int x, int y) { 
- 
+    	if( houghArray == null) System.out.println("Array not init");
         // Go through each value of theta 
         for (int t = 0; t < maxTheta; t++) { 
  
@@ -204,7 +202,7 @@ public class HoughTransform extends Thread {
      * 
      * @param percentageThreshold The percentage threshold above which lines are determined from the hough array 
      */ 
-    public Vector<HoughLine> getLines(int threshold) { 
+    public Vector<? extends HoughElem> getLines(int threshold) { 
  
         // Initialise the vector of lines that we'll return 
         Vector<HoughLine> lines = new Vector<HoughLine>(20); 
