@@ -77,4 +77,42 @@ if( DEBUG ) {
    return accum;
 }
 
+public static void main(String[] args) {
+	Vector4d points;
+	Vector4d colors;
+	Vector4d color_map;
+	ArrayList<plane_t> planes_out = new ArrayList<plane_t>();
+	hough_settings settings = new hough_settings();
+	accumulatorball_t accum;
+	octree_t father = new octree_t();
+
+	double size = 0.6;
+	double max_distance = 0.0;
+	boolean show_settings[];
+	boolean realtime_cond = true;
+	int index_plane = 0;
+	int plane_value = 0;
+	int number_planes_show = 1;
+	int rho_index_accumulator = 50;
+	int alturaoc = 1;
+	int cont_frames = 1;
+	int octree_height = 0;
+	reader_file rf = new reader_file();
+	rf.load_point_cloud(settings, father);
+	Vector4d centroid = father.m_centroid.divide(father.m_points.size());
+	for(Vector4d  v : father.m_points) {
+	      v = v.subtract(centroid);
+	      max_distance =Math.max(max_distance,Math.abs(v.x));
+	      max_distance = Math.max(max_distance,Math.abs(v.y));
+	      max_distance = Math.max(max_distance,Math.abs(v.z));
+	      settings.max_point_distance = Math.max(settings.max_point_distance,v.getLength());
+	   }
+
+	   father.m_centroid = new Vector4d();
+	   father.m_size = max_distance * 2.0;
+	   hough h = new hough();
+	   accum = h.kht3d(planes_out, father, settings);
+	   System.out.println("Number of planes detected = "+planes_out.size());
+}
+
 }

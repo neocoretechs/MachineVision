@@ -1,8 +1,9 @@
-//#include "Matrix4d.h"
-//#include "Vector4d.h"
-//#include <stdio.h>
-//#include <cmath>
 package com.neocoretechs.machinevision.hough3d;
+/**
+ * 4D matrix
+ * @author jg
+ *
+ */
 public class Matrix4d {
     double data[] = new double[16];
 	final static double Z[] = {0.0f, 0.0f, 0.0f, 0.0f,

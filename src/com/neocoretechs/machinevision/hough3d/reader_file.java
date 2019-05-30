@@ -5,11 +5,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-
-//#include <iostream>
-//#include <fstream>
-//#include "octree_t.h"
+/**
+ * Read file and prepare dataset for detection of planar regions.
+ * @author jg
+ *
+ */
 public class reader_file {
    double mix,miy,miz,max,may,maz;
    /**
@@ -22,6 +22,7 @@ public class reader_file {
    int point_num = 0;
    //file.open(settings.file + settings.extension);
    File f = new File(settings.file+settings.extension);
+   System.out.println(f.getPath()+f.getName()+" isfile?="+f.isFile());
    try {
 		dis = new BufferedReader(new FileReader(f));
 		String inLine;

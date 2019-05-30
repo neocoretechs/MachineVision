@@ -1,11 +1,10 @@
 package com.neocoretechs.machinevision.hough3d;
-
 import java.util.ArrayList;
-
-//#include "voting.h"
-//#include "Thirdparty/SwissArmyKnife/Matrix4d.h"
-//#include <ctime>
-
+/**
+ * Cast votes for elements in the accumulator ball using gaussian kernel, our used bins and octree nodes.
+ * @author jg
+ *
+ */
 public class voting {
 	/**
 	 * 

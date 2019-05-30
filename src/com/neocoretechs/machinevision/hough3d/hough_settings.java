@@ -16,7 +16,7 @@ public class hough_settings {
       public static final double min_isotropy = 1.0/6.0; 
 	  public static final int s_level = 1;
 	  public static final int s_ms = 0;
-      public static final double max_point_distance = 0;
+      public static double max_point_distance = 0;
 	  public static final double max_distance2plane = 0.0025;
 	  public static String file = "/users/jg/workspace/robocore/motionclouds/roscoe1";
 	  public static String extension = ".asc";

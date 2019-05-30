@@ -1,15 +1,11 @@
 package com.neocoretechs.machinevision.hough3d;
 
 import java.util.ArrayList;
-
-//#include "Thirdparty/SwissArmyKnife/Mathematic.h"
-//#include "Thirdparty/SwissArmyKnife/Vector4d.h"
-//#include "Thirdparty/MITIE/dlib/dlib/matrix.h"
-//#include "settings.h"
-//#include "GL/glut.h"
-//#include <omp.h>
-
-
+/**
+ * Octree implementation.
+ * @author jg
+ *
+ */
 public class octree_t {
    public static final double EPS = 1.E-3;
    Matrix3 fast_covariance_matrix = new Matrix3();
@@ -20,7 +16,8 @@ public class octree_t {
    octree_t[] m_children = null;
    octree_t m_root;
    Vector4d normal1, normal2, normal3;
-   Vector4d m_middle, m_centroid, color;
+   Vector4d m_middle = new Vector4d();
+   Vector4d m_centroid, color;
    double variance1, variance2, variance3;
    double m_size, representativeness;
    short m_level;

@@ -1,8 +1,9 @@
-//#include "Vector4d.h"
-//#include "Matrix4d.h"
-//#include <cmath>
 package com.neocoretechs.machinevision.hough3d;
-
+/**
+ * 4D vector implementation
+ * @author jg
+ *
+ */
 public class Vector4d {
 
    double x;
