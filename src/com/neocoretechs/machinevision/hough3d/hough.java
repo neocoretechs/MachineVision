@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 
 public class hough {
-  public static boolean DEBUG = false;
+  public static boolean DEBUG = true;
  /**
   *  descending sort
   */
@@ -21,17 +21,32 @@ public class hough {
 
 accumulatorball_t kht3d( ArrayList<plane_t> planes, octree_t father, hough_settings settings) //double max_distance, double distance_discretization, int phi_cells_length )
 {
+	if( DEBUG) {
+		System.out.println("Subdivide...");
+	}
    // Subdividing Procedure
    father.subdivide(settings);
    // Initializes the Accumulator
+	if( DEBUG) {
+		System.out.println("Build accumulator...");
+	}
    accumulatorball_t accum = new accumulatorball_t(settings.max_point_distance, settings.rho_num, settings.phi_num);
+	if( DEBUG) {
+		System.out.println("Begin voting...");
+	}
    // Voting Procedure
    ArrayList<bin_t> used_bins = new ArrayList<bin_t>();
    // Peak Detection Procedure
-   peak_detection.detect(planes, accum, used_bins);   
+   peak_detection.detect(planes, accum, used_bins);
+	if( DEBUG) {
+		System.out.println("Peaks detected, accumulate planes..");
+	}
    for (plane_t p : planes) {
       accum.at(p.ti,(short)p.pi,(short)p.ri).peak = true;
    }
+	if( DEBUG) {
+		System.out.println("Sort planes by representativeness...");
+	}
    // Sorting planes by representativeness
    for(int i = 0; i < planes.size(); i++) {
       planes.get(i).representativeness = 0;
@@ -43,7 +58,7 @@ accumulatorball_t kht3d( ArrayList<plane_t> planes, octree_t father, hough_setti
 
 
 if( DEBUG ) {
-
+	System.out.println("Optional planes coloring for display...");
    // Coloring planes and points
    for (int i = 0; i < planes.size(); i++) {
       Vector4d cor = null;

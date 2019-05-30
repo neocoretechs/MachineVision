@@ -22,7 +22,7 @@ public class reader_file {
    int point_num = 0;
    //file.open(settings.file + settings.extension);
    File f = new File(settings.file+settings.extension);
-   System.out.println(f.getPath()+f.getName()+" isfile?="+f.isFile());
+   System.out.println(f.getPath()+" isfile?="+f.isFile());
    try {
 		dis = new BufferedReader(new FileReader(f));
 		String inLine;

@@ -191,5 +191,9 @@ double get(int index) {
 	}
 	//if ( index>=0 && index<=3 ) return data.get(index); return data.get(0); }
 }
+@Override
+public String toString() {
+	return "[X="+x+" Y="+y+" Z="+z+" W="+w+"]";
+}
 }
 

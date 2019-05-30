@@ -478,7 +478,9 @@
 		}
 		
 	    public String toString() {
-	    	return String.format("[%15.8f,%15.8f,%15.8f]\r\n[%15.8f,%15.8f,%15.8f]\r\n[%15.8f,%15.8f,%15.8f]\r\n",values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8]);    	
+	    	return String.format("[%15.8f,%15.8f,%15.8f]\r\n[%15.8f,%15.8f,%15.8f]\r\n[%15.8f,%15.8f,%15.8f]\r\n",values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8]); 
+	    	//return "["+values[0]+" "+values[1]+" "+values[2]+"]\r\n["+values[3]+" "+values[4]+" "+values[5]+"]\r\n["+values[6]+" "+values[7]+" "+values[8]+"]\r\n";
+	
 	    }
 	    
 	

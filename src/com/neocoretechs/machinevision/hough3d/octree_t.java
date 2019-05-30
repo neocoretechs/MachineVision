@@ -23,7 +23,12 @@ public class octree_t {
    short m_level;
    boolean coplanar;
    int votes;
-   
+   private boolean DEBUG = true;
+   private boolean DEBUGVARIANCE = false;
+   private boolean DEBUGSUBDIVIDE = false;
+   /**
+    * 
+    */
    public octree_t() {
      coplanar = false;
      m_centroid = new Vector4d(0,0,0,0);
@@ -31,7 +36,9 @@ public class octree_t {
      variance1 = variance2 = variance3 = 0.0;
      votes= 0;
   }
-
+   /**
+    * 
+    */
    void clear() {
    if (m_children != null) {
       for(int i = 0; i < 8 ; i++) {
@@ -41,19 +48,40 @@ public class octree_t {
       m_children = null;
    }
   }
-
+   /**
+    * Subdivide an octree node.
+    * RECURSIVE. 
+    * Dependent on settings value s_ms, which is minimum size of m_indexes array to limit recursion.
+    * s_ms MUST be > 0 and large enough to prevent depth recursion from blowing the stack
+    * Dependent on settings value s_level to determine the level at which m_level we check for variance direction
+    * and potentially remove outliers that are greater than m_size/10 from the plane we are trying to form.
+    * We use the variances from the least_variance_direction method (variance1, variance2, variance3, variance4)
+    * to determine thickness and isotropy:
+    *  double thickness = variance1 / variance2;
+    *  double isotropy  = variance2 / variance3;
+    * If thickness < than the max_thickness from settings, and isotropy is > min_isotropy from settings, then we
+    * remove outliers, compute least_variance_direction again, and set coplanar to true.
+    * @param settings
+    */
   void subdivide( hough_settings settings ) {
-   // s_ms verification
+		if(DEBUGSUBDIVIDE ) {
+			System.out.println("octree subdivide...level="+m_level+" indicies="+m_indexes.size()+" centoid="+m_centroid);
+		}
+   // s_ms verification, obviously the value needs to be > 0 and low values seem to want to blow the stack
 	if (m_indexes.size() < (int)settings.s_ms) 
 	    return;
-
    // s_level verification
+	if(DEBUGSUBDIVIDE) {
+		System.out.println("octree subdivide s_level verification in octree..."+(m_level >=settings.s_level)+", "+m_level+" "+settings.s_level);
+	}
    if (m_level >= settings.s_level) {
       // principal component analysis
       least_variance_direction();
       // Planarity verification
       double thickness = variance1 / variance2;
       double isotropy  = variance2 / variance3;
+      if( DEBUG )
+    	  System.out.println("thickness and isotropy="+thickness+" "+isotropy);
       if (thickness < settings.max_thickness && isotropy > settings.min_isotropy) {
          // Refitting step
          remove_outliers();
@@ -125,25 +153,43 @@ public class octree_t {
       m_children[i].subdivide(settings);
    }
   }
-
+  /**
+   * 
+   */
    void remove_outliers() {
     Vector4d centroid = new Vector4d();
     for (int i = m_indexes.size()-1; i >=0 ; i--) {
       if (distance2plane(m_root.m_points.get(m_indexes.get(i))) > m_size/10.0) {
-         m_indexes.remove(m_indexes.get(0).intValue()+i);
+    		if( DEBUG) {
+    			System.out.println("octree remove_outliers removing..."+m_indexes.get(i));//distance2plane(m_root.m_points.get(m_indexes.get(i)))+" > "+(m_size/10.0));
+    		}
+         m_indexes.remove(i);
       } else {
          centroid.add(m_root.m_points.get(m_indexes.get(i)));
       }
     }
     if (m_indexes.size() > 0)
       m_centroid = centroid.divide(m_indexes.size());
+    else
+    	if( DEBUG) {
+			System.out.println("octree remove_outliers: ***m_indexes has ZERO entries...");
+		}
    }
-
-   Matrix3 fast_covariance_matrix() {
+   /**
+    * 
+    * @return
+    */
+   private Matrix3 fast_covariance_matrix() {
      int nverts = m_indexes.size();
      double nvertsd = (double)(nverts);
      Matrix3 covariance = new Matrix3();
      covariance.set(0,0, 0.0);
+ 	if( DEBUGVARIANCE) {
+		System.out.println("octree fast_covariance_matrix verticies="+nverts+" centroid="+m_centroid);
+		//for(int k = 0; k < nverts; k++) {
+		//	System.out.println("index="+k+": "+(m_root.m_points.get(m_indexes.get(k))));
+		//}
+	}
    for (int k = 0; k < nverts; k++)
      covariance.set(0,0, covariance.get(0,0) + 
     		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)) * 
@@ -199,12 +245,26 @@ public class octree_t {
    covariance.set(1,2, covariance.get(2,1));
    return covariance;
   }
-
-  void least_variance_direction(){
+   /**
+    * Principle component analysis
+    */
+  private void least_variance_direction(){
+		if( DEBUGVARIANCE) {
+			System.out.println("octree least_variance_direction...computing covariance");
+		}
    m_covariance = fast_covariance_matrix();
+	if( DEBUGVARIANCE ) {
+		System.out.println("octree least_variance_direction...eigenvalue decomp:");//\r\n"+m_covariance);
+	}
    EigenvalueDecomposition eigenvalue_decomp = new EigenvalueDecomposition(m_covariance);
    //dlib::
+	if( DEBUGVARIANCE) {
+		System.out.println("octree least_variance_direction...get real eigenvectors");
+	}
    double[] eigenvalues_vector = eigenvalue_decomp.getRealEigenvalues();
+	if( DEBUGVARIANCE) {
+		System.out.println("octree least_variance_direction...get eigenvalues");
+	} 
    int min_index = 0, max_index = 0, middle_index = 0;
    if (eigenvalues_vector[1] < eigenvalues_vector[min_index]) {
       min_index = 1;
@@ -222,18 +282,30 @@ public class octree_t {
    variance1 = eigenvalues_vector[min_index];
    variance2 = eigenvalues_vector[middle_index];
    variance3 = eigenvalues_vector[max_index];
-
+	if( DEBUGVARIANCE) {
+		System.out.println("octree least_variance_direction...");//variance1="+variance1+" variance2="+variance2+" variance3="+variance3);
+	}
    Matrix3 eigenvectors_matrix = eigenvalue_decomp.getV();
 
    normal1 = new Vector4d(eigenvectors_matrix.get(0, min_index),eigenvectors_matrix.get(1, min_index),eigenvectors_matrix.get(2, min_index));
    normal2 = new Vector4d(eigenvectors_matrix.get(0, middle_index), eigenvectors_matrix.get(1, middle_index), eigenvectors_matrix.get(2, middle_index));
    normal3 = new Vector4d(eigenvectors_matrix.get(0, max_index), eigenvectors_matrix.get(1, max_index), eigenvectors_matrix.get(2, max_index));
+	if( DEBUGVARIANCE) {
+		System.out.println("octree least_variance_direction...");//eigenvector normal1="+normal1+" normal2="+normal2+" normal3="+normal3);
+	}
   }
-
+  /**
+   * 
+   * @param point
+   * @return
+   */
   double distance2plane( Vector4d point ){
    return Math.abs(point.subtract(m_centroid).and(normal1.Normalized()));
   }
-
+  /**
+   * 
+   * @param nodes
+   */
   void get_nodes( ArrayList<octree_t> nodes ) {
    if (m_children != null) {
       for (short i = 0; i < 8 ; i++) {

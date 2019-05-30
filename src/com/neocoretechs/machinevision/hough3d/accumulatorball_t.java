@@ -26,6 +26,12 @@ public class accumulatorball_t {
    double m_delta_angle;       // Discretization step to the angles (theta & phi)
 
    ArrayList<ArrayList<accum_ball_cell_t>> m_data = new ArrayList<ArrayList<accum_ball_cell_t>>();
+   /**
+    * 
+    * @param max_distance
+    * @param rho_num
+    * @param phi_num
+    */
    public accumulatorball_t(double max_distance, int rho_num, int phi_num) {
    	neighbors_size = 27;
 	m_theta_max = Math.PI*2;
