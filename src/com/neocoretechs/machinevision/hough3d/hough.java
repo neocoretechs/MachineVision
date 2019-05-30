@@ -3,21 +3,12 @@ package com.neocoretechs.machinevision.hough3d;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-//#include "hough.h"
-//#include "peak_detection.h"
-//#include "voting.h"
-//#include "Thirdparty/SwissArmyKnife/Timer.h"
-//#include "octree_t.h"
-//#include "plane_t.h"
-//#include "settings.h"
-//#include <vector>
-//#include <iostream>
-//#include <chrono>
-//#include "Thirdparty/SwissArmyKnife/Mathematic.h"
-//#include "accumulatorball_t.h"
+
 public class hough {
   public static boolean DEBUG = false;
- // descending sort
+ /**
+  *  descending sort
+  */
  public static Comparator<plane_t> planeComparator = new Comparator<plane_t>() {
     @Override         
     public int compare(plane_t p1, plane_t p2) { 

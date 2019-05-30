@@ -1,12 +1,10 @@
 package com.neocoretechs.machinevision.hough3d;
-
 import java.util.ArrayList;
-//#include "Thirdparty/SwissArmyKnife/Mathematic.h"
-//#include "Thirdparty/SwissArmyKnife/Vector4d.h"
-//#include "Thirdparty/SwissArmyKnife/Matrix4d.h"
-//#include "GL/glut.h"
-//#include "octree_t.h"
-
+/**
+ * Describes all aspects of a planar surface derived from the octree subset and theta, phi, rho of point.
+ * @author jg
+ *
+ */
 public class plane_t {
    double ti, m_rotate;
    int pi,ri;
@@ -30,7 +28,10 @@ public class plane_t {
 
    ArrayList<Vector4d> m_points;
    public plane_t() {}
-
+   /**
+    * From theta, phi, rho and nodes in octree, calculate the centroids, the normals, etc of the planes.
+    * Everything affecting the 'm_' members.
+    */
    void calculate() {     
       m_normal.x = Math.sin(m_phi) * Math.cos(m_theta);
       m_normal.y = Math.sin(m_phi) * Math.sin(m_theta);

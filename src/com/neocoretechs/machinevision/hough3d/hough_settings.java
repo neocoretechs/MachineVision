@@ -1,4 +1,10 @@
 package com.neocoretechs.machinevision.hough3d;
+
+/**
+ * Settings to drive planar detection process.
+ * @author jg
+ *
+ */
 public class hough_settings {
       // Accumulator discretization
       public static final int phi_num = 30;

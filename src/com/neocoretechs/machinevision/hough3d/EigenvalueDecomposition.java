@@ -47,10 +47,6 @@ public class EigenvalueDecomposition {
 	   */
 	   private double[] ort;
 
-	/* ------------------------
-	   Private Methods
-	 * ------------------------ */
-
 	   // Symmetric Householder reduction to tridiagonal form.
 
 	   private void tred2 () {

@@ -251,8 +251,21 @@ public class CannyEdgeDetector {
 	}
 	
 	// methods
-	
+	/**
+	 * Perform processing all the way up to generation of edgesImage with max luminance white
+	 * 0xFF000000 for empty space and max luminance black 0xFFFFFFFF (-1) for edge pixel
+	 */
 	public void process() {
+		semiProcess();
+		thresholdEdges();
+		writeEdges(data);
+	}
+	
+	/**
+	 * Perform processing up until performHysteresis, so we get data array with magnitudes back;
+	 * @return The integer array of each pixel as gradient magnitude.
+	 */
+	public int[] semiProcess() {
 		width = sourceImage.getWidth();
 		height = sourceImage.getHeight();
 		picsize = width * height;
@@ -263,8 +276,7 @@ public class CannyEdgeDetector {
 		int low = Math.round(lowThreshold * MAGNITUDE_SCALE);
 		int high = Math.round( highThreshold * MAGNITUDE_SCALE);
 		performHysteresis(low, high);
-		thresholdEdges();
-		writeEdges(data);
+		return data;
 	}
  
 	// private utility methods

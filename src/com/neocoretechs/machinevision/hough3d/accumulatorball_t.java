@@ -1,20 +1,16 @@
 package com.neocoretechs.machinevision.hough3d;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-
-//#include "accum_ball_cell_t.h"
-//#include "Thirdparty/SwissArmyKnife/Mathematic.h"
-//#include "bin_t.h"
-
-//#include <cstring>
-//#include <vector>
-
-// http://www.inf.ufrgs.br/~oliveira/pubs_files/HT3D/Limberger_Oliveira_3D_HT_Pre-Print_low_res.pdf
+/**
+ * http://www.inf.ufrgs.br/~oliveira/pubs_files/HT3D/Limberger_Oliveira_3D_HT_Pre-Print_low_res.pdf
+ * @author jg
+ *
+ */
 public class accumulatorball_t {
 	static final short[] offset_x = {0, 0,  0,  0,  0, +1, -1,      +1, -1, +1, -1, +1, -1, -1, +1,  0,  0,  0,  0,     +1, +1, +1, -1, +1, -1, -1, -1,};
     static final short[] offset_y = {0  +1, -1,  0,  0,  0,  0,      +1, -1, -1, +1,  0,  0,  0,  0, +1, -1, -1, +1,     +1, +1, -1, +1, -1, -1, +1, -1,};
     static final short[] offset_z = {0, 0,  0, +1, -1,  0,  0,       0,  0,  0,  0, +1, -1, +1, -1, +1, -1, +1, -1,     +1, -1, +1, +1, -1, +1, -1, -1,};
+	private static final boolean DEBUG = false;
 
   int neighbors_size;
 
@@ -121,35 +117,36 @@ public class accumulatorball_t {
       return 1.0 / (double)(m_data.get(phi_index).size());
    }
 
-   double process_theta(double theta_index) {
-      return (theta_index+1.0) - (int)(theta_index+1.0);
+   void process_theta(double[] theta_phi_index /*double theta_index*/) {
+      //return (theta_index+1.0) - (int)(theta_index+1.0);
+	   theta_phi_index[0] = (theta_phi_index[0]+1.0) - (int)(theta_phi_index[0]+1.0);
    }
 
-   boolean process_phi(double theta_index, int phi_index) {
-      process_theta(theta_index);
-      
-      if (phi_index < 0) {
-         phi_index = Math.abs(phi_index);
-         theta_index = (theta_index+0.5) - (int)((theta_index+0.5));
+   boolean process_phi(double[] theta_phi_index /*double theta_index, int phi_index*/) {
+      /*theta_index*/ process_theta(theta_phi_index/*theta_index*/);  
+      if (theta_phi_index[1] /*phi_index*/ < 0) {
+         theta_phi_index[1] = Math.abs(theta_phi_index[1]);
+         /*theta_index*/ theta_phi_index[0] = (theta_phi_index[0]+0.5) - (int)((theta_phi_index[0]+0.5));
          return true;
       }
-      else if (phi_index > m_phi_length) {
-         phi_index = m_phi_length + m_phi_length - phi_index;
-         theta_index = (theta_index+0.5) - (int)((theta_index+0.5));
+      else if (/*phi_index*/ theta_phi_index[1] > m_phi_length) {
+         theta_phi_index[1] = m_phi_length + m_phi_length - theta_phi_index[1];
+         /*theta_index*/ theta_phi_index[0] = (theta_phi_index[0]+0.5) - (int)((theta_phi_index[0]+0.5));
          return true;
       }
       return false;
    }
 
-   boolean process_rho(double theta_index, int phi_index, int rho_index) {
-      if (rho_index < 0) {
-         rho_index = Math.abs(rho_index);
-         phi_index = m_phi_length - phi_index;
-         theta_index = (theta_index+0.5) - (int)((theta_index+0.5));
+   boolean process_rho(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
+      if (/*rho_index*/theta_phi_index[2] < 0) {
+         theta_phi_index[2] = Math.abs(theta_phi_index[2]);
+         /*phi_index*/ theta_phi_index[1] = m_phi_length - theta_phi_index[1];
+         /*theta_index*/theta_phi_index[0] = (theta_phi_index[0]+0.5) - (int)((theta_phi_index[0]+0.5));
          return true;
       } else
-    	  if (rho_index >= m_rho_length) 
-    		  return false;  
+    	  if (/*rho_index*/theta_phi_index[2] >= m_rho_length) { 
+    		  return false;
+    	  }
       return true;
    }
 
@@ -163,19 +160,26 @@ public class accumulatorball_t {
 		theta = 0.5;
       else 
 		theta = theta_index;
-
-      //                                 center[1]   /  direct-linked[7]  /         /          semi-direct-linked[19]          /      /     diagonal-linked[27]    /
+      // we are going to be changing the references in theta_phi_index inside the 'process_' methods
+      double[] theta_phi_index = new double[3];
+      //  center[1]   /  direct-linked[7]  semi-direct-linked[19] diagonal-linked[27] 
       for (short i=0; i != neighborhood_size; ++i){
-         t = theta;
-         p = phi_index + offset_y[i];
-         r = rho_index + offset_z[i];
-         process_phi(t,p);
-         t = fix_theta(t,p);
-         t += delta_theta_index(p) * (double)(offset_x[i]);
-
-         if (process_limits(t,p,r) == false) continue;
-
-        accum_cell_t cell = at(t,(short)p,(short)r);
+         //t = theta;
+         //p = phi_index + offset_y[i];
+         //r = rho_index + offset_z[i];
+          theta_phi_index[0] = theta;
+          theta_phi_index[1] = phi_index + offset_y[i];
+          theta_phi_index[2] = rho_index + offset_z[i];
+         //process_phi(t,p);
+          process_phi(theta_phi_index);
+         //t = fix_theta(t,p);
+          theta_phi_index[0] = fix_theta(theta_phi_index[0], (int) theta_phi_index[1]);
+         //t += delta_theta_index(p) * (double)(offset_x[i]);
+          theta_phi_index[0] += delta_theta_index((int) theta_phi_index[1]) * (double)(offset_x[i]);
+         //if (process_limits(t,p,r) == false) continue;
+         if( !process_limits(theta_phi_index) )
+        	 continue;
+        accum_cell_t cell = at(theta_phi_index[0], (short)theta_phi_index[1], (short)theta_phi_index[2] /*t,(short)p,(short)r*/);
          if (!result.contains(cell)) {
             result.add(cell);
          }
@@ -183,9 +187,9 @@ public class accumulatorball_t {
       return result;
    }
 
-   boolean process_limits(double theta_index, int phi_index, int rho_index) {
-      process_phi(theta_index, phi_index);
-      return process_rho(theta_index, phi_index, rho_index);
+   boolean process_limits(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
+      process_phi(theta_phi_index /*theta_index, phi_index*/);
+      return process_rho(theta_phi_index);
    }
    
    accum_cell_t at(double theta, short phi, short rho) {
@@ -217,16 +221,16 @@ public class accumulatorball_t {
 	return ((int)(Math.round(theta * (double)(tempAccum.size()))) % tempAccum.size());
    }
 
-   void get_index(double theta, double phi, double rho, double theta_index, int phi_index, int rho_index) {
-      theta_index = theta/Math.PI*2 + 0.5;
-      phi_index = (int) Math.round(phi / m_delta_angle);
-      rho_index =  (int) Math.round(rho / m_delta_rho);
+   void get_index(kernel_t kernel) {
+      kernel.theta_index = kernel.theta/Math.PI*2 + 0.5;
+      kernel.phi_index = (int) Math.round(kernel.phi / m_delta_angle);
+      kernel.rho_index =  (int) Math.round(kernel.rho / m_delta_rho);
    }
 
-   void get_values(double theta, double phi, double rho, double theta_index, int phi_index, int rho_index) {
-      theta = (theta_index-0.5) * Math.PI*2;
-      phi =   (double)(phi_index) * m_delta_angle;
-      rho =   (double)(rho_index) * m_delta_rho;
+   void get_values(plane_t plane, double theta_index, int phi_index, int rho_index) {
+      plane.m_theta = (theta_index-0.5) * Math.PI*2;
+      plane.m_phi =   (double)(phi_index) * m_delta_angle;
+      plane.m_rho =   (double)(rho_index) * m_delta_rho;
    }
 
    void spherical_to_cartesian(Vector4d normal, double theta, double phi, double rho){

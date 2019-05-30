@@ -1,5 +1,9 @@
 package com.neocoretechs.machinevision.hough3d;
-// A structure that stores the coordinates of an accumulator cell
+/**
+ * A structure that stores the coordinates of an accumulator cell
+ * @author jg
+ *
+ */
 public class bin_t implements Comparable{
   double theta_index;
   short phi_index;
