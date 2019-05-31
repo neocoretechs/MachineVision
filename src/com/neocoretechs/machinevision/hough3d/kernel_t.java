@@ -36,30 +36,27 @@ public class kernel_t {
 	public static final double NONZERO = 0.00001;
 	private static final boolean DEBUG = true;
 
-   octree_t node;
+    octree_t node;
 
-   double rho;
-   double theta;
-   double phi;
+    double rho;
+    double theta;
+    double phi;
 
-   double constant_normal, constant_binormal;
-   double voting_limit;
+    double constant_normal, constant_binormal;
+    double voting_limit;
 
-   double theta_index;
-   int phi_index;
-   int rho_index;
+    //double theta_index;
+    //int phi_index;
+    //int rho_index;
+    double[] thetaPhiRhoIndex = new double[3];
 
-   int votes;
+    int votes;
 
-   //dlib::
-   Matrix3 covariance_rpt_normal;
-   //dlib::
-   Matrix3 covariance_rpt_inv_normal;
+    Matrix3 covariance_rpt_normal;
+    Matrix3 covariance_rpt_inv_normal;
 
    void kernel_load_parameters(double max_point_distance)  {
-      //dlib::
 	  Matrix3 covariance_xyz = node.m_covariance;
-      //dlib::
 	  Matrix3 jacobian_normal = new Matrix3();
       Vector4d n = node.normal1.Normalized();
       // Jacobian Matrix calculation
@@ -139,7 +136,7 @@ public class kernel_t {
 	* We avoid the need to handle such a special case by adding a small value e to sigma-rho**2
 	* (e.g., " = 0:001, see line 3 in Algorithm 3 in the paper). Thus, voting can always use a trivariate Gaussian kernel, 
 	* without affecting the results.
-    * @param rho
+    * @param rho Rho value, notice parameters are reversed..
     * @param phi
     * @param theta
     * @return
@@ -153,8 +150,7 @@ public class kernel_t {
       //return (std::exp(-0.5 * (dlib::trans(displacement) * covariance_rpt_inv_normal * displacement))/constant_normal);
       // two matrix vector calcs yielding vector
       double [] trans =(Matrix3.transpose(displacement).multiply(covariance_rpt_inv_normal.multiply(displacement)));
-	  //double gaussDist=	Math.exp(trans.multiply(-0.5)) / constant_normal;
-      double gaussDist = getExponentTerm(displacement, trans);
+      double gaussDist = getExponentTerm(displacement, trans) / constant_normal;
 	  if(DEBUG)
 		  System.out.println("trivariate gaussian dist norml="+gaussDist);
 	  return gaussDist;
@@ -163,6 +159,7 @@ public class kernel_t {
     * Computes the term used in the exponent.
     * the votes are already centered at the best-fitting parameters (theta, phi, rho)
     * @param values Values at which to compute density.
+    * @param preMultiplied the 2 matrix vector calcs
     * @return the multiplication factor of density calculations.
     */
    private double getExponentTerm(final double[] values, final double[] preMultiplied) {

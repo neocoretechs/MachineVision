@@ -11,8 +11,17 @@ import java.io.IOException;
  *
  */
 public class reader_file {
-   double mix,miy,miz,max,may,maz;
-   /**
+   double mix = Double.MAX_VALUE;
+   double miy = Double.MAX_VALUE;
+   double miz = Double.MAX_VALUE;
+   double max = Double.MIN_VALUE;
+   double may = Double.MIN_VALUE;
+   double maz = Double.MIN_VALUE;
+   String fileName;
+   public reader_file(String fil) {
+	fileName = fil;
+   }
+/**
    * Read CloudCompare point cloud viewer compatible file
    * for each point - X,Y,Z,R,G,B ascii delimited by space
    * the processed array chunks of [x][y][0]=R, [x][y][1]=G, [x][y][2]=B, [x][y][3]=D
@@ -21,7 +30,15 @@ public class reader_file {
    BufferedReader dis = null;
    int point_num = 0;
    //file.open(settings.file + settings.extension);
-   File f = new File(settings.file+settings.extension);
+   File f = new File(settings.file+fileName+settings.extension);
+   if( !f.exists() ) {
+	   f = new File(settings.file+settings.extension);
+	   if(!f.exists()) {
+		   if( fileName != null )
+			   f = new File(fileName);
+		   throw new RuntimeException("Cant find any permutation of file:"+f);
+	   }
+   }
    System.out.println(f.getPath()+" isfile?="+f.isFile());
    try {
 		dis = new BufferedReader(new FileReader(f));
@@ -54,9 +71,12 @@ public class reader_file {
 		} catch (IOException e) {}		
 	}
   }
-
-void load_point_cloud(hough_settings settings, octree_t node) {
-
+ /**
+  * Create root node and read file.
+  * @param settings
+  * @param node
+  */
+  void load_point_cloud(hough_settings settings, octree_t node) {
    System.out.print("Loading Point Cloud...");
    node.m_middle.set(new Vector4d(0,0,0));
    node.m_level = 0;
@@ -64,5 +84,5 @@ void load_point_cloud(hough_settings settings, octree_t node) {
    read_file(settings, node); 
    System.out.println("Size: "+node.m_points.size()+" min="+mix+","+miy+","+miz+" max="+max+","+may+","+maz);
    //settings.s_ms = settings.s_ps * node.m_points.size();
-}
+  }
 }

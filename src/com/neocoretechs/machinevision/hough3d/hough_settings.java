@@ -17,15 +17,19 @@ public class hough_settings {
       public static final int phi_num = 30;
       public static final int rho_num = 300;
 	  // Percentage of the number of points from the point cloud to stop subdividing
-	  public static final double s_ps = 0.002;
+	  public static final double s_ps = 2;//0.002;
       // relative tolerances associated with plane thickness (s_alpha) and plane isotropy (s_beta)
+	  // thickness < settings.max_thickness && isotropy > settings.min_isotropy
       public static final double max_thickness = .5; //1/25=.04
-      public static final double min_isotropy = .5;  //1/6 = .166
+      public static final double min_isotropy = .01;  //1/6 = .166
 	  public static final int s_level = 4;
 	  public static final int s_ms = 2;
       public static double max_point_distance = 1;
-	  public static final double max_distance2plane = 0.25;
-	  public static String file = "/users/jg/workspace/robocore/motionclouds/roscoe1";
+	  public static final double max_distance2plane = 10; //.25
+	  // this declaration overrides any command line file name input
+	  //public static String file = "/users/jg/workspace/robocore/motionclouds/roscoe1";
+	  // this pure path declaration allows command line input of file name
+	  public static String file = "/users/jg/workspace/robocore/motionclouds/";
 	  public static String extension = ".asc";
       // Point cloud examples (let one block uncommented) =======================================
       // Max distance is only used for coloring the point cloud after the plane detection

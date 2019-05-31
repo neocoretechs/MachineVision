@@ -2,6 +2,9 @@ package com.neocoretechs.machinevision.hough3d;
 
 import java.util.ArrayList;
 /**
+ * Accumulator ball structure which holds cells that tally votes as an alternative to degenerate 3d array or
+ * other 3d hough accumulators resembling cubes and hedrons.
+ * Each phi is an arraylist of accum_ball_cell_t.
  * http://www.inf.ufrgs.br/~oliveira/pubs_files/HT3D/Limberger_Oliveira_3D_HT_Pre-Print_low_res.pdf
  * @author jg
  *
@@ -12,7 +15,7 @@ public class accumulatorball_t {
     static final short[] offset_z = {0, 0,  0, +1, -1,  0,  0,       0,  0,  0,  0, +1, -1, +1, -1, +1, -1, +1, -1,     +1, -1, +1, +1, -1, +1, -1, -1,};
 	private static final boolean DEBUG = false;
 
-  int neighbors_size;
+    int neighbors_size;
 
    double m_theta_max;
    double m_phi_max;
@@ -25,7 +28,8 @@ public class accumulatorball_t {
    double m_delta_rho;         // Discretization step to the distance (rho)
    double m_delta_angle;       // Discretization step to the angles (theta & phi)
 
-   ArrayList<ArrayList<accum_ball_cell_t>> m_data = new ArrayList<ArrayList<accum_ball_cell_t>>();
+   private ArrayList<ArrayList<accum_ball_cell_t>> m_data = new ArrayList<ArrayList<accum_ball_cell_t>>();
+   
    /**
     * 
     * @param max_distance
@@ -36,7 +40,6 @@ public class accumulatorball_t {
    	neighbors_size = 27;
 	m_theta_max = Math.PI*2;
 	m_phi_max = Math.PI;
-
 	m_rho_length = (short) rho_num;
 	m_phi_length = (short) phi_num;
 	m_phi_length_half = (short) (phi_num / 2);
@@ -52,10 +55,9 @@ public class accumulatorball_t {
 	}
 	*/
 	}
-
-
    /**
-   * Assume monotonically increasing phi_index that supports ArrayList add to end vs insert at phi_index
+   * Assume monotonically increasing phi_index that supports ArrayList add to end vs insert at phi_index.
+   * called from voting gaussian vote 2d
    */
    void initialize(double theta_index, int phi_index) {
       int t = get_theta_index(theta_index, phi_index);
@@ -159,7 +161,7 @@ public class accumulatorball_t {
    
    ArrayList<accum_cell_t> get_neighbors( double theta_index, short phi_index, short rho_index, int neighborhood_size ){
       ArrayList<accum_cell_t> result = new ArrayList<accum_cell_t>(neighborhood_size);
-      int p, r;
+      //int p, r;
       double t, theta;
 
       if (phi_index==0 || phi_index==m_phi_length) 
@@ -199,6 +201,8 @@ public class accumulatorball_t {
    }
    
    accum_cell_t at(double theta, short phi, short rho) {
+	   //if(t == -1 || m_data.get(phi).get(t) == null)
+	   //   m_data.get(phi).get(t).set(new accum_ball_cell_t(m_rho_length));
       int t = get_theta_index(theta,phi);
       ArrayList<accum_ball_cell_t> tempCell = m_data.get(phi);
       if(t == -1 || tempCell == null) {
@@ -213,8 +217,6 @@ public class accumulatorball_t {
     	// m_data[phi_index][t] =  new accum_ball_cell_t(m_rho_length);
     	tempCell.add(t, new accum_ball_cell_t(m_rho_length));
       }
-      //if(t == -1 || m_data.get(phi).get(t) == null)
-      //   m_data.get(phi).get(t).set(new accum_ball_cell_t(m_rho_length));
       return tempCell.get(t).bins[rho];
    }
 	/**
@@ -226,11 +228,17 @@ public class accumulatorball_t {
 		return -1;
 	return ((int)(Math.round(theta * (double)(tempAccum.size()))) % tempAccum.size());
    }
-
+   /**
+    * Form the kernel index from the values of theta, phi , rho in the kernel
+    * @param kernel
+    */
    void get_index(kernel_t kernel) {
-      kernel.theta_index = kernel.theta/Math.PI*2 + 0.5;
-      kernel.phi_index = (int) Math.round(kernel.phi / m_delta_angle);
-      kernel.rho_index =  (int) Math.round(kernel.rho / m_delta_rho);
+      //kernel.theta_index = kernel.theta/Math.PI*2 + 0.5;
+      //kernel.phi_index = (int) Math.round(kernel.phi / m_delta_angle);
+      //kernel.rho_index =  (int) Math.round(kernel.rho / m_delta_rho);
+      kernel.thetaPhiRhoIndex[0] = kernel.theta/Math.PI*2 + 0.5;
+      kernel.thetaPhiRhoIndex[1] = (int) Math.round(kernel.phi / m_delta_angle);
+      kernel.thetaPhiRhoIndex[2] =  (int) Math.round(kernel.rho / m_delta_rho);
    }
 
    void get_values(plane_t plane, double theta_index, int phi_index, int rho_index) {
@@ -239,7 +247,7 @@ public class accumulatorball_t {
       plane.m_rho =   (double)(rho_index) * m_delta_rho;
    }
 
-   void spherical_to_cartesian(Vector4d normal, double theta, double phi, double rho){
+   static void spherical_to_cartesian(Vector4d normal, double theta, double phi, double rho){
       normal.x = Math.sin(phi) * Math.cos(theta) * rho;
       normal.y = Math.sin(phi) * Math.sin(theta) * rho;
       normal.z = Math.cos(phi) * rho;
@@ -250,5 +258,7 @@ public class accumulatorball_t {
       int t = (int) Math.round((theta) * p_size);
       return (t==1)?(0.0):t/p_size;
    }
+   
+   public ArrayList<ArrayList<accum_ball_cell_t>> getData() { return m_data; }
 
 }

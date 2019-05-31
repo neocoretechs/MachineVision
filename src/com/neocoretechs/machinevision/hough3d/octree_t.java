@@ -2,17 +2,23 @@ package com.neocoretechs.machinevision.hough3d;
 
 import java.util.ArrayList;
 /**
- * Octree implementation.
+ * Octree implementation with recursive subdivision. Uses array primitive for child nodes.
+ * Maintains arraylist of integer indexes for each node that point back to root m_points for coords
+ * of source points in this node.
+ * Maintains centroid of data points, number of votes for coplanarity, status as coplanar, tree level, normals to
+ * potential planes, and access to root node.
+ * Also has the ability to generate a fast covariance matrix of data points, compute the least variance direction, and
+ * remove outliers that are farther from prospective plane than a certain tolerance.
  * @author jg
  *
  */
-public class octree_t {
+public final class octree_t {
    public static final double EPS = 1.E-3;
    Matrix3 fast_covariance_matrix = new Matrix3();
    Matrix3 m_covariance = new Matrix3();
-   ArrayList<Vector4d> m_points = new ArrayList<Vector4d>();
+   ArrayList<Vector4d> m_points = null;//new ArrayList<Vector4d>();
    ArrayList<Vector4d> m_colors= new ArrayList<Vector4d>();
-   ArrayList<Integer> m_indexes= new ArrayList<Integer>();
+   ArrayList<Integer> m_indexes= new ArrayList<Integer>(); // points to m_points in root node from subnodes
    octree_t[] m_children = null;
    octree_t m_root;
    Vector4d normal1, normal2, normal3;
@@ -27,9 +33,22 @@ public class octree_t {
    private boolean DEBUGVARIANCE = false;
    private boolean DEBUGSUBDIVIDE = false;
    /**
-    * 
+    * Default c'tor sets coplanar false, creates a centroid at 0,0,0 and sets color.
     */
    public octree_t() {
+     coplanar = false;
+     m_centroid = new Vector4d(0,0,0,0);
+     color = new Vector4d(0.5,0.5,0.5);
+     variance1 = variance2 = variance3 = 0.0;
+     votes= 0;
+  }
+   /**
+    * Special root node c'tor sets coplanar false, creates a centroid at 0,0,0 and sets color.
+    * Also sets m_points to new arraylist of vector4d to hold data points.
+    */
+   public octree_t(boolean root) {
+	 if(root)
+		  m_points = new ArrayList<Vector4d>();
      coplanar = false;
      m_centroid = new Vector4d(0,0,0,0);
      color = new Vector4d(0.5,0.5,0.5);
@@ -85,6 +104,10 @@ public class octree_t {
       if (thickness < settings.max_thickness && isotropy > settings.min_isotropy) {
          // Refitting step
          remove_outliers();
+         if( m_indexes.size() == 0) { // did we remove all points?
+        	 coplanar = false;
+        	 return;
+         }
          least_variance_direction();
          coplanar = true;
          return;
@@ -154,29 +177,36 @@ public class octree_t {
    }
   }
   /**
-   * 
+   * For each point in this node, Subtract the centroid from the passed point and take the vector4d scalar dot product of that
+   * and the normalized 'normal1' vector, then compare the absolute value of that to m_size/10. If its greater
+   * remove this point index.
    */
-   void remove_outliers() {
+   private void remove_outliers() {
     Vector4d centroid = new Vector4d();
-    for (int i = m_indexes.size()-1; i >=0 ; i--) {
-      if (distance2plane(m_root.m_points.get(m_indexes.get(i))) > m_size/10.0) {
+    int origSize = m_indexes.size();
+    for(int i = m_indexes.size()-1; i >=0 ; i--) {
+      double dp = distance2plane(m_root.m_points.get(m_indexes.get(i)));
+      if( dp > (m_size/10.0)) {
     		if( DEBUG) {
-    			System.out.println("octree remove_outliers removing..."+m_indexes.get(i));//distance2plane(m_root.m_points.get(m_indexes.get(i)))+" > "+(m_size/10.0));
+    			System.out.println("octree remove_outliers removing..."+m_indexes.get(i)+" "+m_root.m_points.get(m_indexes.get(i))+" "+dp+" > "+(m_size/10.0));
     		}
          m_indexes.remove(i);
       } else {
          centroid.add(m_root.m_points.get(m_indexes.get(i)));
       }
     }
-    if (m_indexes.size() > 0)
+    if (m_indexes.size() > 0) {
       m_centroid = centroid.divide(m_indexes.size());
-    else
+    } else
     	if( DEBUG) {
 			System.out.println("octree remove_outliers: ***m_indexes has ZERO entries...");
 		}
+    if( DEBUG ) {
+    	System.out.println("octree_t remove_outliers: original m_indexes size="+origSize+" new size="+m_indexes.size());
+    }
    }
    /**
-    * 
+    * Generate 3D fast covariance matrix for each point in this node.
     * @return
     */
    private Matrix3 fast_covariance_matrix() {
@@ -257,7 +287,6 @@ public class octree_t {
 		System.out.println("octree least_variance_direction...eigenvalue decomp:");//\r\n"+m_covariance);
 	}
    EigenvalueDecomposition eigenvalue_decomp = new EigenvalueDecomposition(m_covariance);
-   //dlib::
 	if( DEBUGVARIANCE) {
 		System.out.println("octree least_variance_direction...get real eigenvectors");
 	}
@@ -295,7 +324,9 @@ public class octree_t {
 	}
   }
   /**
-   * 
+   * Subtract the centroid from the passed point and take the vector4d scalar dot product of that
+   * and the normalized 'normal1' vector.
+   * then return the absolute value of that.
    * @param point
    * @return
    */
@@ -303,10 +334,11 @@ public class octree_t {
    return Math.abs(point.subtract(m_centroid).and(normal1.Normalized()));
   }
   /**
-   * 
+   * If child nodes are not present, add 'this' to the passed node array if this node is marked 'coplanar=true'
+   * otherwise recursively perform the operation 
    * @param nodes
    */
-  void get_nodes( ArrayList<octree_t> nodes ) {
+  private void get_nodes( ArrayList<octree_t> nodes ) {
    if (m_children != null) {
       for (short i = 0; i < 8 ; i++) {
          m_children[i].get_nodes(nodes);

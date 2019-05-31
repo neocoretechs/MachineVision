@@ -104,7 +104,11 @@ Vector4d divide(Vector4d v) {
    return this;
 }
 
-
+/**
+ * scalar dot product of vector4d v and 'this'
+ * @param v
+ * @return
+ */
 double and(Vector4d v) { // scalar
    return x*v.x + y*v.y + z*v.z;
 }
