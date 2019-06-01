@@ -6,6 +6,7 @@ import java.util.ArrayList;
  * other 3d hough accumulators resembling cubes and hedrons.
  * Each phi is an arraylist of accum_ball_cell_t.
  * http://www.inf.ufrgs.br/~oliveira/pubs_files/HT3D/Limberger_Oliveira_3D_HT_Pre-Print_low_res.pdf
+ * https://robotik.informatik.uni-wuerzburg.de/telematics/download/3dresearch2011.pdf
  * @author jg
  *
  */
@@ -13,7 +14,7 @@ public class accumulatorball_t {
 	static final short[] offset_x = {0, 0,  0,  0,  0, +1, -1,      +1, -1, +1, -1, +1, -1, -1, +1,  0,  0,  0,  0,     +1, +1, +1, -1, +1, -1, -1, -1,};
     static final short[] offset_y = {0  +1, -1,  0,  0,  0,  0,      +1, -1, -1, +1,  0,  0,  0,  0, +1, -1, -1, +1,     +1, +1, -1, +1, -1, -1, +1, -1,};
     static final short[] offset_z = {0, 0,  0, +1, -1,  0,  0,       0,  0,  0,  0, +1, -1, +1, -1, +1, -1, +1, -1,     +1, -1, +1, +1, -1, +1, -1, -1,};
-	private static final boolean DEBUG = false;
+	private static final boolean DEBUG = true;
 
     int neighbors_size;
 
@@ -45,35 +46,73 @@ public class accumulatorball_t {
 	m_phi_length_half = (short) (phi_num / 2);
 	m_data.ensureCapacity(m_phi_length + 1);
 	m_delta_angle = Math.PI / (double)m_phi_length;
-	m_delta_rho = max_distance / (double)rho_num;
-	/*
-	for (int p = 0; p <= m_phi_length; p++)
-	{
+	m_delta_rho = max_distance / (double)rho_num;	
+	for (int p = 0; p <= m_phi_length; p++){
 		double m_phi = (double)p / (double)m_phi_length * m_phi_max;
 		int length = Math.max(1, (int)(Math.round((double)m_phi_length*2.0 * Math.sin(m_phi))));
-		m_data[p].resize(length, NULL);
+		ArrayList<accum_ball_cell_t> tempCell = new ArrayList<accum_ball_cell_t>(length);
+		m_data.add(tempCell);
 	}
-	*/
-	}
+	
+  }
    /**
-   * Assume monotonically increasing phi_index that supports ArrayList add to end vs insert at phi_index.
-   * called from voting gaussian vote 2d
+   * Set things up so we can get a new accum_ball_cell_t into the right place in the collections. 
+   * Called from voting gaussian vote 2d.
+   * Similar to 'at' method, yet returning nothing.
+   * Ensure capacities of all collections: m_data, the accumulator ball cell at m_data[phi_index]
+   * and the t or rho element of the m_data[phi_index] collection
+   * 
    */
    void initialize(double theta_index, int phi_index) {
       int t = get_theta_index(theta_index, phi_index);
-      ArrayList<accum_ball_cell_t> tempCell = m_data.get(phi_index);
-      if(t == -1 || tempCell == null) {
-		//m_data(phi_index) = 
-    	ArrayList<accum_ball_cell_t> tempAccum = new ArrayList<accum_ball_cell_t>();
-    	m_data.add(phi_index, tempAccum);
-    	if( t == -1 )
-    		tempAccum.add(new accum_ball_cell_t(m_rho_length));
-    	else
-    		// m_data[phi_index][t] =  new accum_ball_cell_t(m_rho_length);
-    		tempAccum.add(t, new accum_ball_cell_t(m_rho_length));
+      if( m_data.size() <= phi_index ) {
+    	  m_data.ensureCapacity(phi_index+1);
+    	  ArrayList<accum_ball_cell_t> tempCell = new ArrayList<accum_ball_cell_t>(t+1);
+          accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
+          if( DEBUG )
+        	  System.out.println("accumulatorball_t initialize adding( m_data < phi_index) t="+t+" tempCell size="+tempCell.size());
+          tempCell.add(t, tempAbc);
+          if( DEBUG )
+        	  System.out.println("accumulatorball_t initialize adding (m_data < phi_index) phi_index="+phi_index+" m_data size="+m_data.size());
+          m_data.add(phi_index, tempCell);
+          return;
       }
+      if( DEBUG )
+      	  System.out.println("accumulatorball_t initialize GETTING tempCell from phi="+phi_index+" m_data size="+m_data.size());
+      ArrayList<accum_ball_cell_t> tempCell = m_data.get(phi_index);
+      if(tempCell == null) {
+		//m_data(phi_index) = 
+    	tempCell = new ArrayList<accum_ball_cell_t>(t+1);
+        accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
+        if( DEBUG )
+      	  System.out.println("accumulatorball_t initialize adding (tempCell==null) t="+t+" tempCell size="+tempCell.size());
+      	tempCell.add(t, tempAbc);
+        if( DEBUG )
+      	  System.out.println("accumulatorball_t initialize adding (tempCell==null) phi_index="+phi_index+" m_data size="+m_data.size());
+    	m_data.add(phi_index, tempCell);
+    	return;
+      }
+      // m_data[phi_index][t] =  new accum_ball_cell_t(m_rho_length);
+      // tempCell not null, but may be too small
+      if(tempCell.size() <= t) {
+    	  tempCell.ensureCapacity(t+1);
+          accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
+          if( DEBUG )
+          	  System.out.println("accumulatorball_t initialize adding tempCell (size <=t) t="+t+" tempCell size="+tempCell.size());
+          for(int i = tempCell.size(); i <= t; i++) tempCell.add(i/*t*/, tempAbc);
+          return;
+      }
+      if( DEBUG )
+      	  System.out.println("accumulatorball_t initialize adding tempCell t="+t+" tempCell size="+tempCell.size());
+      tempCell.add(t, new accum_ball_cell_t(m_rho_length));
    }
-
+   /**
+    * 
+    * @param theta_index
+    * @param phi_index
+    * @param rho_index
+    * @return
+    */
    boolean visited_neighbor(double theta_index, short phi_index, short rho_index) {
       ArrayList<accum_cell_t> neighbors = get_neighbors(theta_index,phi_index,rho_index, 27);
       for (accum_cell_t cell : neighbors) {
@@ -81,7 +120,13 @@ public class accumulatorball_t {
       }
       return false;
    }
-
+   /**
+    * 
+    * @param theta_index
+    * @param phi_index
+    * @param rho_index
+    * @return
+    */
    ArrayList<octree_t> convolution_nodes(double theta_index, short phi_index, short rho_index) {
       ArrayList<octree_t> nodes = new ArrayList<octree_t>();
       ArrayList<accum_cell_t> neighbors = get_neighbors(theta_index, phi_index, rho_index, 27);
@@ -93,7 +138,13 @@ public class accumulatorball_t {
       }
       return nodes;
    }
-   
+   /**
+    * 
+    * @param theta_index
+    * @param phi_index
+    * @param rho_index
+    * @return
+    */
    float convolution_value(double theta_index, int phi_index, int rho_index) {
       float acc_value = 0;
       ArrayList<accum_cell_t> neighbors = get_neighbors(theta_index, (short)phi_index, (short)rho_index, 5);
@@ -104,32 +155,56 @@ public class accumulatorball_t {
       }
       return acc_value;
    }
-
+   /**
+    * 
+    * @param phi_index
+    * @return
+    */
    double normalization_factor(int phi_index) {
       return 360.0 / (double)m_data.get(phi_index).size();
    }
-
+   /**
+    * 
+    * @param theta_index
+    * @param phi_index
+    * @param rho_index
+    */
    void set_visited(double theta_index, short phi_index, short rho_index) {
       ArrayList<accum_cell_t> neighbors = get_neighbors(theta_index, phi_index, rho_index, 27);
       for (accum_cell_t cell : neighbors) {
             cell.visited = true;
       }
    }
-
+   /**
+    * 
+    * @param phi_index
+    * @return
+    */
    double delta_theta(int phi_index) {
       return m_theta_max / (double)(m_data.get(phi_index).size());
    }
-
+   /**
+    * 
+    * @param phi_index
+    * @return
+    */
    double delta_theta_index(int phi_index)
    {
       return 1.0 / (double)(m_data.get(phi_index).size());
    }
-
+   /**
+    * Compute theta part of theta_phi_index element 0
+    * @param theta_phi_index
+    */
    void process_theta(double[] theta_phi_index /*double theta_index*/) {
       //return (theta_index+1.0) - (int)(theta_index+1.0);
 	   theta_phi_index[0] = (theta_phi_index[0]+1.0) - (int)(theta_phi_index[0]+1.0);
    }
-
+   /**
+    * 
+    * @param theta_phi_index
+    * @return
+    */
    boolean process_phi(double[] theta_phi_index /*double theta_index, int phi_index*/) {
       /*theta_index*/ process_theta(theta_phi_index/*theta_index*/);  
       if (theta_phi_index[1] /*phi_index*/ < 0) {
@@ -144,7 +219,11 @@ public class accumulatorball_t {
       }
       return false;
    }
-
+   /**
+    * 
+    * @param theta_phi_index
+    * @return
+    */
    boolean process_rho(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
       if (/*rho_index*/theta_phi_index[2] < 0) {
          theta_phi_index[2] = Math.abs(theta_phi_index[2]);
@@ -157,8 +236,14 @@ public class accumulatorball_t {
     	  }
       return true;
    }
-
-   
+   /**
+    * 
+    * @param theta_index
+    * @param phi_index
+    * @param rho_index
+    * @param neighborhood_size
+    * @return
+    */
    ArrayList<accum_cell_t> get_neighbors( double theta_index, short phi_index, short rho_index, int neighborhood_size ){
       ArrayList<accum_cell_t> result = new ArrayList<accum_cell_t>(neighborhood_size);
       //int p, r;
@@ -194,39 +279,65 @@ public class accumulatorball_t {
       } 
       return result;
    }
-
+   /**
+    * 
+    * @param theta_phi_index
+    * @return
+    */
    boolean process_limits(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
       process_phi(theta_phi_index /*theta_index, phi_index*/);
       return process_rho(theta_phi_index);
    }
-   
-   accum_cell_t at(double theta, short phi, short rho) {
+   /**
+    * if phi is null, put new entry at phi,get_theta_index(theta,phi) in m_data after we get_theta_index of theta,phi.
+    * Otherwise just return bins at rho.
+    * @param theta_index
+    * @param phi_index
+    * @param rho_index
+    * @return bins[rho] of get_theta_index(theta,phi)
+    */
+   accum_cell_t at(double theta_index, short phi_index, short rho_index) {
 	   //if(t == -1 || m_data.get(phi).get(t) == null)
 	   //   m_data.get(phi).get(t).set(new accum_ball_cell_t(m_rho_length));
-      int t = get_theta_index(theta,phi);
-      ArrayList<accum_ball_cell_t> tempCell = m_data.get(phi);
-      if(t == -1 || tempCell == null) {
-		//m_data(phi_index) = 
-    	tempCell = new ArrayList<accum_ball_cell_t>();
-    	m_data.add(phi, tempCell);
-    	if( t == -1 ) {
-    		accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-    		tempCell.add(tempAbc);
-    		return tempAbc.bins[rho];
-    	}
-    	// m_data[phi_index][t] =  new accum_ball_cell_t(m_rho_length);
-    	tempCell.add(t, new accum_ball_cell_t(m_rho_length));
+      int t = get_theta_index(theta_index,phi_index);
+      if( m_data.size() <= phi_index ) {
+    	  m_data.ensureCapacity(phi_index+1);
+    	  ArrayList<accum_ball_cell_t> tempCell = new ArrayList<accum_ball_cell_t>(t+1);
+          accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
+          tempCell.add(t, tempAbc);
+          m_data.add(phi_index, tempCell);
+          return tempAbc.bins[rho_index];
       }
-      return tempCell.get(t).bins[rho];
+      if( DEBUG )
+    	  System.out.println("accumulatorball_t at getting "+phi_index+" from "+m_data.size());
+      ArrayList<accum_ball_cell_t> tempCell = m_data.get(phi_index);
+      if(tempCell == null) {
+		//m_data(phi_index) = 
+    	tempCell = new ArrayList<accum_ball_cell_t>(t+1);
+    	accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
+    	tempCell.add(t, tempAbc);
+       	m_data.add(phi_index, tempCell);
+    	return tempAbc.bins[rho_index];
+    	// m_data[phi_index][t] =  new accum_ball_cell_t(m_rho_length);
+      }
+      // tempCell not null, but may be too small
+      if(tempCell.size() <= t) {
+    	  tempCell.ensureCapacity(t+1);
+          accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
+          //tempCell.add(t, tempAbc);
+          for(int i = tempCell.size(); i <= t; i++) tempCell.add(i/*t*/, tempAbc);
+          return tempAbc.bins[rho_index];
+      }
+      return tempCell.get(t).bins[rho_index];
    }
 	/**
-	* do a get from m_data for phi index, if null return -1 else multiply theta by size of phi index and round
+	* Call with size of m_data for phi index, multiply theta by size of phi index and round
 	*/
-   int get_theta_index(double theta, int phi_index){
-	ArrayList<accum_ball_cell_t> tempAccum = m_data.get(phi_index);
-	if( tempAccum == null )
-		return -1;
-	return ((int)(Math.round(theta * (double)(tempAccum.size()))) % tempAccum.size());
+   private int get_theta_index(double theta, int phiSize){
+	//ArrayList<accum_ball_cell_t> tempAccum = m_data.get(phi_index);
+	//if( tempAccum == null )
+	//	return -1;
+	return phiSize == 0 ? 0 : ((int)(Math.round(theta * (double)(phiSize))) % phiSize);
    }
    /**
     * Form the kernel index from the values of theta, phi , rho in the kernel
@@ -240,25 +351,45 @@ public class accumulatorball_t {
       kernel.thetaPhiRhoIndex[1] = (int) Math.round(kernel.phi / m_delta_angle);
       kernel.thetaPhiRhoIndex[2] =  (int) Math.round(kernel.rho / m_delta_rho);
    }
-
+   /**
+    * 
+    * @param plane
+    * @param theta_index
+    * @param phi_index
+    * @param rho_index
+    */
    void get_values(plane_t plane, double theta_index, int phi_index, int rho_index) {
       plane.m_theta = (theta_index-0.5) * Math.PI*2;
       plane.m_phi =   (double)(phi_index) * m_delta_angle;
       plane.m_rho =   (double)(rho_index) * m_delta_rho;
    }
-
+   /**
+    * 
+    * @param normal
+    * @param theta
+    * @param phi
+    * @param rho
+    */
    static void spherical_to_cartesian(Vector4d normal, double theta, double phi, double rho){
       normal.x = Math.sin(phi) * Math.cos(theta) * rho;
       normal.y = Math.sin(phi) * Math.sin(theta) * rho;
       normal.z = Math.cos(phi) * rho;
    }
-
+   /**
+    * 
+    * @param theta
+    * @param phi
+    * @return
+    */
    double fix_theta(double theta, int phi) {
       double p_size = m_data.get(phi).size();
       int t = (int) Math.round((theta) * p_size);
       return (t==1)?(0.0):t/p_size;
    }
-   
+   /**
+    * Get the m_data member
+    * @return
+    */
    public ArrayList<ArrayList<accum_ball_cell_t>> getData() { return m_data; }
 
 }

@@ -6,6 +6,8 @@ import java.util.ArrayList;
  *
  */
 public final class voting {
+	private static boolean DEBUG = true;
+
 	/**
 	 * Init by calculating kernels recursively, then casting votes for all kernels
 	 * @param root
@@ -101,9 +103,11 @@ public final class voting {
 			} else 
 				break;
 		}
+		if( DEBUG )
+			System.out.println("voting gaussian_vote_1d after voting RHO DIR POS voted="+voted);
 		// Voting in the RHO array the direction "negative"
 		inc_rho_index = -1;
-		for(theta_phi_index[2]/*rho_index*/ = tpr[2]/*rho_start_index*/-1, rho = -inc_rho;;theta_phi_index[2]/*rho_index*/ += inc_rho_index, rho -= inc_rho) {
+		for(theta_phi_index[2]/*rho_index*/ = tpr[2]-1/*rho_start_index-1*/, rho = -inc_rho;;theta_phi_index[2]/*rho_index*/ += inc_rho_index, rho -= inc_rho) {
 			if (theta_phi_index[2]/*rho_index*/ < 0) inc_rho_index *= -1;
 			if (!accum.process_rho(theta_phi_index/*t, p, rho_index*/)) 
     		  break;
@@ -112,10 +116,16 @@ public final class voting {
 			if (gauss < kernel.voting_limit)
 				break;
 			if ((votes = (float)(gauss)) >= (float)(0.0)) {
-				voted = cast_vote(used_bins, accum.at(theta_phi_index[0], (short)theta_phi_index[1],(short)theta_phi_index[2]), kernel, votes, theta_phi_index/*t, p, rho_index*/);
+				if( DEBUG ) {
+					System.out.println("voting gaussian_vote_1d RHO DIR NEG theta index="+theta_phi_index[0]+" phi index="+theta_phi_index[1]+" rho index="+theta_phi_index[2]);
+				}
+				voted = cast_vote(used_bins, accum.at(theta_phi_index[0], (short)theta_phi_index[1],(short)theta_phi_index[2]), kernel, votes, 
+				 theta_phi_index/*t, p, rho_index*/);
 			} else 
 				break;
 		}
+		if( DEBUG )
+			System.out.println("voting gaussian_vote_1d after voting RHO DIR NEG returning voted="+voted);
 		return voted;
 	}
 

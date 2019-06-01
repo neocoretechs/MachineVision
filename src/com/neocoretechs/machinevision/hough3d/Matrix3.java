@@ -170,7 +170,7 @@
 	    	double result[] = new double[9];
 	    	int row_perm[] = new int[3];
 	    	int i;
-	    	double[]    tmp = new double[9];  // scratch matrix
+	    	double[] tmp = new double[9];  // scratch matrix
 	    	// Use LU decomposition and backsubstitution code specifically
 	    	// for floating-point 3x3 matrices.
 	    	// Copy source matrix to t1tmp
@@ -188,7 +188,9 @@
 	        // Calculate LU decomposition: Is the matrix singular?
 	        if (!luDecomposition(tmp, row_perm)) {
 	        	// Matrix has no inverse
-	        	throw new RuntimeException("matrix has no inverse");
+	        	System.out.println("***Matrix has no inverse "+this);
+	        	values = new double[9]; // scratch this matrix
+	        	return out; // return null matrix
 	        }
 	        // Perform back substitution on the identity matrix
 	        for(i=0;i<9;i++) result[i] = 0.0;

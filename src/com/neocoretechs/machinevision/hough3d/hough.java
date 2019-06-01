@@ -124,7 +124,7 @@ public class hough {
 	accumulatorball_t accum;
 	octree_t father = new octree_t(true);
 	double size = 0.6;
-	double max_distance = 0.0;
+	double max_distance = 0.0; // absolute longest bound in x,y, or z
 	boolean show_settings[];
 	boolean realtime_cond = true;
 	int index_plane = 0;
@@ -140,14 +140,21 @@ public class hough {
 	else
 		rf = new reader_file(null);
 	rf.load_point_cloud(settings, father);
+	if( DEBUG ) {
+		System.out.println("Loaded "+father.m_points.size()+" points...");
+	}
 	Vector4d centroid = father.m_centroid.divide(father.m_points.size());
+	// establish farthest distance between any 2 points on any axis.
 	for(Vector4d  v : father.m_points) {
 	      v = v.subtract(centroid);
 	      max_distance =Math.max(max_distance,Math.abs(v.x));
 	      max_distance = Math.max(max_distance,Math.abs(v.y));
 	      max_distance = Math.max(max_distance,Math.abs(v.z));
+	      // length is vector magnitude from origin
 	      settings.max_point_distance = Math.max(settings.max_point_distance,v.getLength());
 	}
+	if( DEBUG )
+		System.out.println("octree centroid="+centroid+" max vector magnitude="+settings.max_point_distance);
 	father.m_centroid = new Vector4d();
 	father.m_size = max_distance * 2.0;
 	hough h = new hough();
