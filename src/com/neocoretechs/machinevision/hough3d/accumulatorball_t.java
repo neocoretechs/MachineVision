@@ -102,9 +102,9 @@ public class accumulatorball_t {
           for(int i = tempCell.size(); i <= t; i++) tempCell.add(i/*t*/, tempAbc);
           return;
       }
-      if( DEBUG )
-      	  System.out.println("accumulatorball_t initialize adding tempCell t="+t+" tempCell size="+tempCell.size());
-      tempCell.add(t, new accum_ball_cell_t(m_rho_length));
+      //if( DEBUG )
+      //	  System.out.println("accumulatorball_t initialize adding tempCell t="+t+" tempCell size="+tempCell.size());
+      //tempCell.add(t, new accum_ball_cell_t(m_rho_length));
    }
    /**
     * 
@@ -199,6 +199,9 @@ public class accumulatorball_t {
    void process_theta(double[] theta_phi_index /*double theta_index*/) {
       //return (theta_index+1.0) - (int)(theta_index+1.0);
 	   theta_phi_index[0] = (theta_phi_index[0]+1.0) - (int)(theta_phi_index[0]+1.0);
+   }
+   public double process_theta(double theta_index) {
+	   return (theta_index+1.0) - (int)(theta_index+1.0);
    }
    /**
     * 
@@ -308,8 +311,8 @@ public class accumulatorball_t {
           m_data.add(phi_index, tempCell);
           return tempAbc.bins[rho_index];
       }
-      if( DEBUG )
-    	  System.out.println("accumulatorball_t at getting "+phi_index+" from "+m_data.size());
+      //if( DEBUG )
+    	//  System.out.println("accumulatorball_t at getting "+phi_index+" from "+m_data.size());
       ArrayList<accum_ball_cell_t> tempCell = m_data.get(phi_index);
       if(tempCell == null) {
 		//m_data(phi_index) = 
@@ -391,5 +394,6 @@ public class accumulatorball_t {
     * @return
     */
    public ArrayList<ArrayList<accum_ball_cell_t>> getData() { return m_data; }
+
 
 }

@@ -151,8 +151,8 @@ public class kernel_t {
       // two matrix vector calcs yielding vector
       double [] trans =(Matrix3.transpose(displacement).multiply(covariance_rpt_inv_normal.multiply(displacement)));
       double gaussDist = getExponentTerm(displacement, trans) / constant_normal;
-	  if(DEBUG)
-		  System.out.println("trivariate gaussian dist norml="+gaussDist);
+	  //if(DEBUG)
+		//  System.out.println("trivariate gaussian dist norml="+gaussDist);
 	  return gaussDist;
    }
    /**

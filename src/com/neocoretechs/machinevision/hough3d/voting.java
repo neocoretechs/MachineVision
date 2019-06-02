@@ -6,7 +6,7 @@ import java.util.ArrayList;
  *
  */
 public final class voting {
-	private static boolean DEBUG = true;
+	private static boolean DEBUG = false;
 
 	/**
 	 * Init by calculating kernels recursively, then casting votes for all kernels
@@ -33,7 +33,7 @@ public final class voting {
 	 * @param tpr array of theta, phi, rho indexes
 	 * @return false if last vote was smaller than this vote, true if otherwise or first vote
 	 */
-	private static boolean cast_vote(ArrayList<bin_t> used_bins, accum_cell_t cell, kernel_t kernel, double votes, double[] tpr/*double t, int p, int r*/){
+	private static boolean cast_vote(ArrayList<bin_t> used_bins, accum_cell_t cell, kernel_t kernel, double votes, double t, int p, int r){
 		// Cluster representativeness
 		votes = votes * kernel.node.representativeness; 
 		// Test if the cell has already been voted by this kernel 
@@ -56,7 +56,7 @@ public final class voting {
 			// Add reference of the node that votes for this cell
 			cell.add_reference(kernel.node);
 			if (!cell.voted) {
-				used_bins.add(new bin_t(tpr[0], (short)tpr[1], (short)tpr[2]/*t, (short)p, (short)r*/));
+				used_bins.add(new bin_t(t, (short)p, (short)r));
 				cell.voted = true;
 			}
 			// Track last node that votes for this cell
@@ -80,26 +80,29 @@ public final class voting {
 	private static boolean gaussian_vote_1d(accumulatorball_t accum, kernel_t kernel, ArrayList<bin_t> used_bins, 
                              double[] tpr, // theta_index, int phi_index, int rho_start_index, 
                              double theta, double phi){
-		int /*rho_index, p,*/ inc_rho_index;
-		double rho, /*t,*/ inc_rho, gauss;
+		int rho_index,p, inc_rho_index;
+		double rho, t, inc_rho, gauss;
 		boolean voted = false;
 		float votes;
-		//p = phi_index;
-		//t = theta_index;
-		double[] theta_phi_index = new double[]{tpr[0]/*theta_index*/, tpr[1]/*phi_index*/, 0.0};
+		p = (int) tpr[1];//phi_index
+		t = tpr[0];//theta_index;
+		//double[] theta_phi_index = new double[]{tpr[0]/*theta_index*/, tpr[1]/*phi_index*/, 0.0};
 		inc_rho = accum.m_delta_rho;
 		inc_rho_index = 1;
 		// Voting in the RHO array the direction "positive"
-		for (/*rho_index*/theta_phi_index[2] = tpr[2]/*rho_start_index*/, rho = 0.0 ;; theta_phi_index[2] += inc_rho_index, rho += inc_rho) {
-			if (theta_phi_index[2]/*rho_index*/ < 0) inc_rho_index *= -1;
-			if (!accum.process_rho(theta_phi_index/*t, p, rho_index*/))
+		for (rho_index = (int) tpr[2]/*rho_start_index*/, rho = 0.0 ;; rho_index += inc_rho_index, rho += inc_rho) {
+			if (rho_index < 0) inc_rho_index *= -1;
+			double[] tprx = new double[]{t, p, rho_index};
+			if (!accum.process_rho(tprx)) {
+				t = tprx[0]; p = (int) tprx[1]; rho_index = (int) tprx[2];
 				break;
+			}
+			t = tprx[0]; p = (int) tprx[1]; rho_index = (int) tprx[2];
 			gauss = kernel.trivariated_gaussian_dist_normal(rho, phi, theta);
 			if (gauss < kernel.voting_limit) 
 				break;
 			if ((votes = (float)(gauss)) >= (float)(0.0)) {
-				voted = cast_vote(used_bins, accum.at(theta_phi_index[0], (short)theta_phi_index[1], (short)theta_phi_index[2]/*t, (short)p, (short)rho_index*/), kernel, votes,
-        		 theta_phi_index/*t, p, rho_index*/);
+				voted = cast_vote(used_bins, accum.at(t, (short)p, (short)rho_index), kernel, votes,t, p, rho_index);
 			} else 
 				break;
 		}
@@ -107,20 +110,23 @@ public final class voting {
 			System.out.println("voting gaussian_vote_1d after voting RHO DIR POS voted="+voted);
 		// Voting in the RHO array the direction "negative"
 		inc_rho_index = -1;
-		for(theta_phi_index[2]/*rho_index*/ = tpr[2]-1/*rho_start_index-1*/, rho = -inc_rho;;theta_phi_index[2]/*rho_index*/ += inc_rho_index, rho -= inc_rho) {
-			if (theta_phi_index[2]/*rho_index*/ < 0) inc_rho_index *= -1;
-			if (!accum.process_rho(theta_phi_index/*t, p, rho_index*/)) 
+		for(rho_index = (int) (tpr[2]-1/*rho_start_index-1*/), rho = -inc_rho;;rho_index += inc_rho_index, rho -= inc_rho) {
+			if (rho_index < 0) inc_rho_index *= -1;
+			double[] tprx = new double[]{t, p, rho_index};
+			if (!accum.process_rho(tprx)) {
+			  t = tprx[0]; p = (int) tprx[1]; rho_index = (int) tprx[2];
     		  break;
+			}
+			t = tprx[0]; p = (int) tprx[1]; rho_index = (int) tprx[2];
 			// gaussian normal dist
 			gauss = kernel.trivariated_gaussian_dist_normal(rho, phi, theta);
 			if (gauss < kernel.voting_limit)
 				break;
 			if ((votes = (float)(gauss)) >= (float)(0.0)) {
 				if( DEBUG ) {
-					System.out.println("voting gaussian_vote_1d RHO DIR NEG theta index="+theta_phi_index[0]+" phi index="+theta_phi_index[1]+" rho index="+theta_phi_index[2]);
+					System.out.println("voting gaussian_vote_1d RHO DIR NEG theta index="+t+" phi index="+p+" rho index="+rho_index);
 				}
-				voted = cast_vote(used_bins, accum.at(theta_phi_index[0], (short)theta_phi_index[1],(short)theta_phi_index[2]), kernel, votes, 
-				 theta_phi_index/*t, p, rho_index*/);
+				voted = cast_vote(used_bins, accum.at(t, (short)p,(short)rho_index), kernel, votes, t, p, rho_index);
 			} else 
 				break;
 		}
@@ -147,8 +153,7 @@ public final class voting {
 		//int phi_index, rho_index = rho_start_index;
 		boolean voted, voting_ended = false;
 		double /*theta_index,*/ theta, phi, theta_init;
-		double[] theta_phi_index = new double[3];
-		theta_phi_index[2] = tpr[2];//rho_start_index;
+		double[] theta_phi_index = new double[]{tpr[0],tpr[1],tpr[2]};
 		// Voting in the PHI array in the direction "inc_phi_index"
 		for(theta_phi_index[1]/*phi_index*/ = tpr[1]/*phi_start_index*/, phi = phi_start; !voting_ended ;
 		   theta_phi_index[1]/*phi_index*/ += inc_phi_index, phi += inc_phi) {    
@@ -157,24 +162,34 @@ public final class voting {
 			theta_init = accum.fix_theta(theta_phi_index[0], (int) theta_phi_index[1]/*theta_index,phi_index*/);
 			double inc_theta = accum.delta_theta((int)tpr[1]/*phi_start_index*/);
 			double inc_theta_index = accum.delta_theta_index((int) theta_phi_index[1]/*phi_index*/);
-			//double curr_theta_index;
+			double curr_theta_index;
 			voted = false;
 			voting_ended = true;
 			// Voting in the THETA array in the direction "positive"
-			for(theta_phi_index[0]/*curr_theta_index*/ = theta_init, theta = 0.0 ;; theta_phi_index[0]/*curr_theta_index*/+=inc_theta_index, theta += inc_theta) {      
-				accum.process_theta(theta_phi_index/*curr_theta_index*/); 
-				accum.initialize(theta_phi_index[0]/*curr_theta_index*/, (int) theta_phi_index[1]/*phi_index*/);
-				voted = gaussian_vote_1d(accum, kernel, used_bins, theta_phi_index/*theta_phi_index[0] curr_theta_index,(int)theta_phi_index[1] phi_index,(int)theta_phi_index[2] rho_index*/, theta, phi);
+			for(curr_theta_index = theta_init, theta = 0.0 ;; curr_theta_index+=inc_theta_index, theta += inc_theta) {      
+				curr_theta_index = accum.process_theta(curr_theta_index); 
+				accum.initialize(curr_theta_index, (int) theta_phi_index[1]/*phi_index*/);
+				double[] currThetaPhi = new double[]{curr_theta_index, theta_phi_index[1], theta_phi_index[2]};
+				voted = gaussian_vote_1d(accum, kernel, used_bins, currThetaPhi/*curr_theta_index,(int)phi_index,(int)rho_index*/, theta, phi);
+				// update current index array
+				curr_theta_index = currThetaPhi[0];
+				theta_phi_index[1] = currThetaPhi[1];
+				theta_phi_index[2] = currThetaPhi[2];
 				if (voted) {
 					voting_ended = false;
 				} else 
 					break;
 			}
 			// Voting in the THETA array in the direction "negative"
-			for(theta_phi_index[0]/*curr_theta_index*/ = theta_init - inc_theta_index, theta = -inc_theta;; /*curr_theta_index*/theta_phi_index[0] -= inc_theta_index, theta -= inc_theta) {
-				accum.process_theta(theta_phi_index/*curr_theta_index*/);
-				accum.initialize(theta_phi_index[0], (int) theta_phi_index[1]/*curr_theta_index, phi_index*/);
-				voted = gaussian_vote_1d(accum, kernel, used_bins, theta_phi_index/*theta_phi_index[0] curr_theta_index, (int)theta_phi_index[1]/*phi_index, (int)theta_phi_index[2] rho_index*/, theta, phi);
+			for(curr_theta_index = theta_init - inc_theta_index, theta = -inc_theta;; curr_theta_index -= inc_theta_index, theta -= inc_theta) {
+				curr_theta_index = accum.process_theta(curr_theta_index);
+				accum.initialize(curr_theta_index, (int) theta_phi_index[1]/* phi_index*/);
+				double[] currThetaPhi = new double[]{curr_theta_index, theta_phi_index[1], theta_phi_index[2]};
+				voted = gaussian_vote_1d(accum, kernel, used_bins, currThetaPhi/*curr_theta_index, (int)phi_index, (int) rho_index*/, theta, phi);
+				// update current index array
+				curr_theta_index = currThetaPhi[0];
+				theta_phi_index[1] = currThetaPhi[1];
+				theta_phi_index[2] = currThetaPhi[2];
 				if (voted) {
 					voting_ended = false;
 				} else 
