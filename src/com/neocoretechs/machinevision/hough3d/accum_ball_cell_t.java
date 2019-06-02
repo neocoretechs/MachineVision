@@ -15,4 +15,17 @@ public class accum_ball_cell_t {
 		  bins[i] = new accum_cell_t();
 	  }
    }
+   @Override
+   public String toString() {
+	   StringBuilder sb=new StringBuilder("accum_ball_cell_t bins=");
+	   sb.append(bins.length);
+	   sb.append("\r\n");
+	   for(int i = 0; i < bins.length; i++) {
+		   sb.append(i);
+		   sb.append("=");
+		   sb.append(bins[i]);
+		   sb.append("\r\n");
+	   }
+	   return sb.toString();
+   }
 }

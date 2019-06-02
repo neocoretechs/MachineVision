@@ -29,10 +29,14 @@ public class plane_t {
    ArrayList<Vector4d> m_points;
    public plane_t() {}
    /**
+    * A lot of the planar elements are set in peak_detect.detect.
+    * this method called from there after some initialization.
     * From theta, phi, rho and nodes in octree, calculate the centroids, the normals, etc of the planes.
     * Everything affecting the 'm_' members.
+    * nodes = accum.convolution_nodes(bin.theta_index, bin.phi_index, bin.rho_index);
     */
-   void calculate() {     
+   void calculate() { 
+	  m_normal = new Vector4d();
       m_normal.x = Math.sin(m_phi) * Math.cos(m_theta);
       m_normal.y = Math.sin(m_phi) * Math.sin(m_theta);
       m_normal.z = Math.cos(m_phi);
@@ -63,6 +67,13 @@ public class plane_t {
    }
    
    boolean isLessthan(plane_t p) { return (representativeness < p.representativeness); }
+   
+   @Override
+   public String toString() {
+	   return "plane_t theta="+m_theta+" phi="+m_phi+" rho="+m_rho+" normal="+m_normal+
+			   " centroid="+m_centroid+" position="+m_position+" votes="+votes+
+			   " representativeness="+representativeness+" octree nodes="+nodes.size();
+   }
 /*
    inline void draw(double size, bool type, bool pc, bool selected) 
    {

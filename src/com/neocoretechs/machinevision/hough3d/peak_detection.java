@@ -10,6 +10,8 @@ import java.util.Collections;
  *
  */
 public final class peak_detection {
+	private static boolean DEBUG = true;
+
 	/**
 	 * Build the planes from bins and ball. 
 	 * @param planes The collection of planes built from bins and the ball
@@ -17,11 +19,15 @@ public final class peak_detection {
 	 * @param used_bins Iterate over accumulator detecting cells not adjacent to already inspected ones
 	 */
   static void detect(ArrayList<plane_t> planes, accumulatorball_t accum, ArrayList<bin_t> used_bins){
+	 if( DEBUG  )
+		 System.out.println("peak_detection detect used_bins="+used_bins.size());
    // Gaussian Convolution of Voted Cells 
    for (bin_t bin : used_bins) {
 	  // may add to m_data?
       accum_cell_t cell = accum.at(bin.theta_index, bin.phi_index, bin.rho_index);
       bin.votes = accum.convolution_value( bin.theta_index, bin.phi_index, bin.rho_index);
+      if( DEBUG )
+    	  System.out.println(bin);
    }
    // Sort the Auxiliary Array (AA - Convoluted Voted Cells) in descending order 
    //std::stable_sort
@@ -40,6 +46,8 @@ public final class peak_detection {
          p.pi = bin.phi_index;
          p.ri = bin.rho_index;
          planes.add(p);
+         if( DEBUG )
+        	 System.out.println("added plane "+p);
       }
       accum.set_visited( bin.theta_index, bin.phi_index, bin.rho_index );
    }

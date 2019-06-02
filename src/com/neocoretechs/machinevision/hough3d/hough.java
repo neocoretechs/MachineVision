@@ -51,9 +51,13 @@ public class hough {
    voting.vote(father, accum, used_bins, settings.max_point_distance);
 	if( DEBUG) {
 		ArrayList<ArrayList<accum_ball_cell_t>> ab = accum.getData();
-		System.out.println("Accum cells="+ab.size());
+		System.out.println(">>>>Accum cells="+ab.size());
 		for(int i = 0; i < ab.size(); i++) {
-			System.out.println("accum cell "+i+" size="+ab.get(i).size());
+			System.out.println(">>>accum cell "+i+" size="+ab.get(i).size());
+			for(int j = 0; j < ab.get(i).size(); j++) {
+				System.out.print(">>accumulator cell "+j+"=");
+				System.out.println(ab.get(i).get(j)); // get accum_ball_cell_t
+			}
 		}
 		System.out.println("Peak detection..");
 	}
@@ -95,9 +99,9 @@ public class hough {
       case 4:cor = new Vector4d((int)(255/(int)(i/6+1)),0,(int)(255/(int)(i/6+1))).divide(255.0);break;
       case 5:cor = new Vector4d((int)(255/(int)(i/6+1)),(int)(255/(int)(i/6+1)),0).divide(255.0);break;
       }
-      planes.get(i).m_color.set(cor);
+      planes.get(i).m_color = cor;
 	  for (int j = 0; j < planes.get(i).nodes.size(); j++)
-         planes.get(i).nodes.get(j).color.set(cor);
+         planes.get(i).nodes.get(j).color = cor;
    }
    for(int i = 0; i < father.m_points.size(); i++){
 	   for(int p = 0; p < planes.size(); p++) {
@@ -160,6 +164,9 @@ public class hough {
 	hough h = new hough();
 	accum = h.kht3d(planes_out, father, settings);
 	System.out.println("Number of planes detected = "+planes_out.size());
+	for(int i = 0; i < planes_out.size(); i++) {
+		System.out.println(i+"="+planes_out.get(i));
+	}
   }
 
 }

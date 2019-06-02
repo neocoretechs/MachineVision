@@ -23,19 +23,16 @@ public class accum_cell_t {
 	      bin = 0;
 	   }
 
-	   //~accum_cell_t()
-	   //{
-	   //   ref_node.clear();
-	   //}
-
 	   boolean verify_cell(octree_t ref) {
 	      return (last_node_voted==ref);
 	   }
 	   void apply_cell(octree_t ref) {
 	      last_node_voted = ref;
 	   }
-
 	   public void add_reference(octree_t ref){
 	      ref_node.add(ref);
 	   }
+	   @Override
+	   public String toString() { return "accum_cell_t peak="+peak+" visited="+visited+" voted="+voted+
+			   " top="+top+" last_cast_vote="+last_cast_vote+" bin="+bin+" octree nodes="+ref_node.size(); }
 }

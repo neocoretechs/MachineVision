@@ -11,10 +11,11 @@ import java.util.ArrayList;
  *
  */
 public class accumulatorball_t {
-	static final short[] offset_x = {0, 0,  0,  0,  0, +1, -1,      +1, -1, +1, -1, +1, -1, -1, +1,  0,  0,  0,  0,     +1, +1, +1, -1, +1, -1, -1, -1,};
-    static final short[] offset_y = {0  +1, -1,  0,  0,  0,  0,      +1, -1, -1, +1,  0,  0,  0,  0, +1, -1, -1, +1,     +1, +1, -1, +1, -1, -1, +1, -1,};
-    static final short[] offset_z = {0, 0,  0, +1, -1,  0,  0,       0,  0,  0,  0, +1, -1, +1, -1, +1, -1, +1, -1,     +1, -1, +1, +1, -1, +1, -1, -1,};
+	static final short[] offset_x = {0, 0,  0,  0,  0, +1, -1,      +1, -1, +1, -1, +1, -1, -1, +1,  0,  0,  0,  0,     +1, +1, +1, -1, +1, -1, -1, -1};
+    static final short[] offset_y = {0, +1, -1,  0,  0,  0,  0,      +1, -1, -1, +1,  0,  0,  0,  0, +1, -1, -1, +1,     +1, +1, -1, +1, -1, -1, +1, -1};
+    static final short[] offset_z = {0, 0,  0, +1, -1,  0,  0,       0,  0,  0,  0, +1, -1, +1, -1, +1, -1, +1, -1,     +1, -1, +1, +1, -1, +1, -1, -1};
 	private static final boolean DEBUG = true;
+	private static final boolean DEBUGINITIALIZE = false;
 
     int neighbors_size;
 
@@ -32,7 +33,7 @@ public class accumulatorball_t {
    private ArrayList<ArrayList<accum_ball_cell_t>> m_data = new ArrayList<ArrayList<accum_ball_cell_t>>();
    
    /**
-    * 
+    * Based on phi_num create a collection of ArrayList<accum_ball_cell_t> in ArrayList m_data
     * @param max_distance
     * @param rho_num
     * @param phi_num
@@ -69,25 +70,25 @@ public class accumulatorball_t {
     	  m_data.ensureCapacity(phi_index+1);
     	  ArrayList<accum_ball_cell_t> tempCell = new ArrayList<accum_ball_cell_t>(t+1);
           accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-          if( DEBUG )
+          if( DEBUGINITIALIZE )
         	  System.out.println("accumulatorball_t initialize adding( m_data < phi_index) t="+t+" tempCell size="+tempCell.size());
           tempCell.add(t, tempAbc);
-          if( DEBUG )
+          if( DEBUGINITIALIZE )
         	  System.out.println("accumulatorball_t initialize adding (m_data < phi_index) phi_index="+phi_index+" m_data size="+m_data.size());
           m_data.add(phi_index, tempCell);
           return;
       }
-      if( DEBUG )
+      if( DEBUGINITIALIZE )
       	  System.out.println("accumulatorball_t initialize GETTING tempCell from phi="+phi_index+" m_data size="+m_data.size());
       ArrayList<accum_ball_cell_t> tempCell = m_data.get(phi_index);
       if(tempCell == null) {
 		//m_data(phi_index) = 
     	tempCell = new ArrayList<accum_ball_cell_t>(t+1);
         accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-        if( DEBUG )
+        if( DEBUGINITIALIZE )
       	  System.out.println("accumulatorball_t initialize adding (tempCell==null) t="+t+" tempCell size="+tempCell.size());
       	tempCell.add(t, tempAbc);
-        if( DEBUG )
+        if( DEBUGINITIALIZE )
       	  System.out.println("accumulatorball_t initialize adding (tempCell==null) phi_index="+phi_index+" m_data size="+m_data.size());
     	m_data.add(phi_index, tempCell);
     	return;
@@ -97,7 +98,7 @@ public class accumulatorball_t {
       if(tempCell.size() <= t) {
     	  tempCell.ensureCapacity(t+1);
           accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-          if( DEBUG )
+          if( DEBUGINITIALIZE )
           	  System.out.println("accumulatorball_t initialize adding tempCell (size <=t) t="+t+" tempCell size="+tempCell.size());
           for(int i = tempCell.size(); i <= t; i++) tempCell.add(i/*t*/, tempAbc);
           return;
@@ -121,11 +122,13 @@ public class accumulatorball_t {
       return false;
    }
    /**
-    * 
+    * Get the accum_cell_ t neighbors at theta, phi,rho up to passed limit, 
+    * iterate neighbors, then iterate each neighbors octree nodes. If the output list
+    * doesnt contain the node, add it, thus building unique list of neighbor octree nodes which we return.
     * @param theta_index
     * @param phi_index
     * @param rho_index
-    * @return
+    * @return unique list of neighbor octree nodes.
     */
    ArrayList<octree_t> convolution_nodes(double theta_index, short phi_index, short rho_index) {
       ArrayList<octree_t> nodes = new ArrayList<octree_t>();
@@ -259,7 +262,7 @@ public class accumulatorball_t {
       // we are going to be changing the references in theta_phi_index inside the 'process_' methods
       double[] theta_phi_index = new double[3];
       //  center[1]   /  direct-linked[7]  semi-direct-linked[19] diagonal-linked[27] 
-      for (short i=0; i != neighborhood_size; ++i){
+      for (short i=0; i < neighborhood_size; ++i){
          //t = theta;
          //p = phi_index + offset_y[i];
          //r = rho_index + offset_z[i];
