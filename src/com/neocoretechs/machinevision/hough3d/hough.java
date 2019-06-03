@@ -1,5 +1,10 @@
 package com.neocoretechs.machinevision.hough3d;
 
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -115,6 +120,51 @@ public class hough {
    used_bins.clear();
    return accum;
   }
+	/**
+	 * Write CloudCompare point cloud viewer compatible file
+	 * for each point - X,Y,Z,R,G,B ascii delimited by space
+	 * @param planes the processed array chunks
+	 */
+	protected static void writePlanes(ArrayList<plane_t> planes) {
+		DataOutputStream dos = null;
+		File f = new File(hough_settings.file+"houghout"+hough_settings.extension);
+		try {
+			dos = new DataOutputStream(new FileOutputStream(f));
+			for(plane_t p : planes) {
+				for(octree_t o : p.nodes) {
+				  for(int i = 0; i < o.m_indexes.size() ; i++) {
+					dos.writeBytes(String.valueOf( o.m_root.m_points.get(o.m_indexes.get(i)).x));
+					dos.writeByte(' ');
+					dos.writeBytes(String.valueOf( o.m_root.m_points.get(o.m_indexes.get(i)).y));
+					dos.writeByte(' ');
+					dos.writeBytes(String.valueOf(o.m_root.m_points.get(o.m_indexes.get(i)).z)); // Z
+					dos.writeByte(' ');
+					dos.writeBytes(String.valueOf(255));
+					dos.writeByte(' ');
+					dos.writeBytes(String.valueOf(0));
+					dos.writeByte(' ');
+					dos.writeBytes(String.valueOf(0));
+					dos.writeByte('\r');
+					dos.writeByte('\n');
+				  }
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if( dos != null ) {
+					dos.flush();
+					dos.close();
+				}
+			} catch (IOException e) {
+			}		
+		}
+		
+	}
   /**
    * Command line invocation of 3dKHT process, reading from file in command line with path set in hough_settings
    * @param args
@@ -167,6 +217,7 @@ public class hough {
 	for(int i = 0; i < planes_out.size(); i++) {
 		System.out.println(i+"="+planes_out.get(i));
 	}
+	writePlanes(planes_out);
   }
 
 }
