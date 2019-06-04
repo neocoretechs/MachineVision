@@ -30,7 +30,7 @@ public final class accum_cell_t {
 	   boolean verify_cell(octree_t ref) {
 		  if( last_node_voted == null )
 			  return false;
-	      return (last_node_voted.equals(ref));
+	      return (last_node_voted == ref);//(last_node_voted.equals(ref));
 	   }
 	   // called from cast_vote
 	   void apply_cell(octree_t ref) {

@@ -44,6 +44,8 @@ public class hough {
 	}
    // Subdividing Procedure
    father.subdivide(settings);
+   // debug write octree with coplanar flags
+   writeChildren(father);
    // Initializes the Accumulator, nothing really happens in accumulator until the voting process
 	if( DEBUG) {
 		System.out.println("Build accumulator...");
@@ -150,7 +152,48 @@ public class hough {
 		}
 		
 	}
-
+	
+	private void writeChildren(octree_t node) {
+		DataOutputStream dos = null;
+		File f = new File(hough_settings.file+"octree"+hough_settings.extension);
+		ArrayList<octree_t> nodes = new ArrayList<octree_t>();
+		node.get_nodes(nodes);
+		try {
+			dos = new DataOutputStream(new FileOutputStream(f));
+				for(octree_t oct : nodes) {
+					  for(int i = 0; i < oct.m_indexes.size() ; i++) {
+							dos.writeBytes(String.valueOf( oct.m_root.m_points.get(oct.m_indexes.get(i)).x));
+							dos.writeByte(' ');
+							dos.writeBytes(String.valueOf( oct.m_root.m_points.get(oct.m_indexes.get(i)).y));
+							dos.writeByte(' ');
+							dos.writeBytes(String.valueOf(oct.m_root.m_points.get(oct.m_indexes.get(i)).z)); // Z
+							dos.writeByte(' ');
+							dos.writeBytes(String.valueOf(oct.color.get(0)));
+							dos.writeByte(' ');
+							dos.writeBytes(String.valueOf(oct.color.get(1)));
+							dos.writeByte(' ');
+							dos.writeBytes(String.valueOf(oct.color.get(2)));
+							dos.writeByte('\r');
+							dos.writeByte('\n');
+						 }
+				}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if( dos != null ) {
+					dos.flush();
+					dos.close();
+				}
+			} catch (IOException e) {
+			}		
+		}
+		
+	}
+	
 	private static void writeChildren(octree_t oct, DataOutputStream dos) {
 		try {
 		  for(int i = 0; i < oct.m_indexes.size() ; i++) {
