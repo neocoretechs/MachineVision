@@ -206,7 +206,9 @@ public final class voting {
 	 * @param accum
 	 * @param used_bins
 	 */
-	private static void gaussian_vote_3d(kernel_t kernel, accumulatorball_t accum, ArrayList<bin_t> used_bins){  
+	private static void gaussian_vote_3d(kernel_t kernel, accumulatorball_t accum, ArrayList<bin_t> used_bins){
+		if(kernel.thetaPhiRhoIndex[2] < 0)
+			return;
 		accum.at(kernel.thetaPhiRhoIndex[0]/*theta_index*/, (short)kernel.thetaPhiRhoIndex[1]/*phi_index*/,(short)kernel.thetaPhiRhoIndex[2]/*rho_index*/).top = true;
 		gaussian_vote_2d(accum, kernel, used_bins, kernel.thetaPhiRhoIndex/* kernel.theta_index, kernel.phi_index, kernel.rho_index*/, 0, +1);
 		//int phi_index = kernel.phi_index-1;

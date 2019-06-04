@@ -173,11 +173,11 @@ public final class octree_t {
       }
       m_children[index].m_indexes.add(m_indexes.get(i));
       // Calculating centroid distribution (divided by the number of points below)
-      m_children[index].m_centroid.add(m_root.m_points.get(m_indexes.get(i)));
+      m_children[index].m_centroid = m_children[index].m_centroid.add(m_root.m_points.get(m_indexes.get(i)));
    }
    
    for (int i = 0; i < 8 ; i++) {
-      m_children[i].m_centroid.divide(m_children[i].m_indexes.size());
+      m_children[i].m_centroid = m_children[i].m_centroid.divide(m_children[i].m_indexes.size());
       // Recursive subdivision 
       m_children[i].subdivide(settings);
    }
@@ -198,7 +198,7 @@ public final class octree_t {
     		}
          m_indexes.remove(i);
       } else {
-         centroid.add(m_root.m_points.get(m_indexes.get(i)));
+         centroid = centroid.add(m_root.m_points.get(m_indexes.get(i)));
       }
     }
     if (m_indexes.size() > 0) {
@@ -354,7 +354,13 @@ public final class octree_t {
          nodes.add(this);
       }
    }
-}
+   
+  }
+  
+  @Override
+  public String toString() {
+	   return "octree_t centroid="+m_centroid+" level="+m_level+" size="+m_size+" points="+m_indexes.size()+" coplanar="+coplanar+" votes="+votes+" representativeness="+representativeness;
+  }
   //@Override 
   //public boolean equals(Object onode) {
   //   return ((octree_t)onode).octoNum == octoNum;

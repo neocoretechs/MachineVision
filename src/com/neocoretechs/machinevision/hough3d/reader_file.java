@@ -18,6 +18,11 @@ public class reader_file {
    double may = Double.MIN_VALUE;
    double maz = Double.MIN_VALUE;
    String fileName;
+   private boolean DEBUG = false;
+   /**
+    * 
+    * @param fil
+    */
    public reader_file(String fil) {
 	fileName = fil;
    }
@@ -57,6 +62,8 @@ public class reader_file {
 			max = Math.max(max,point.x);
 			may = Math.max(may,point.y);
 			maz = Math.max(maz,point.z);
+			if( DEBUG  )
+				System.out.println("reader_file red_file read:"+point+" | "+color);
 		}
 	} catch (FileNotFoundException e) {
 			e.printStackTrace();

@@ -152,15 +152,24 @@ public class hough {
 		}
 		
 	}
-	
+	/**
+	 * does get_nodes, which does the recursion and only adds coplanar nodes. Output only coplanar nodes
+	 * @param node
+	 */
 	private void writeChildren(octree_t node) {
 		DataOutputStream dos = null;
 		File f = new File(hough_settings.file+"octree"+hough_settings.extension);
 		ArrayList<octree_t> nodes = new ArrayList<octree_t>();
 		node.get_nodes(nodes);
+		int totalPoints = 0;
 		try {
 			dos = new DataOutputStream(new FileOutputStream(f));
 				for(octree_t oct : nodes) {
+					if( oct.m_level < hough_settings.s_level)
+						continue;
+					totalPoints+=oct.m_indexes.size();
+					if( DEBUG )
+						System.out.println(oct);
 					  for(int i = 0; i < oct.m_indexes.size() ; i++) {
 							dos.writeBytes(String.valueOf( oct.m_root.m_points.get(oct.m_indexes.get(i)).x));
 							dos.writeByte(' ');
@@ -168,11 +177,11 @@ public class hough {
 							dos.writeByte(' ');
 							dos.writeBytes(String.valueOf(oct.m_root.m_points.get(oct.m_indexes.get(i)).z)); // Z
 							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf(oct.color.get(0)));
+							dos.writeBytes(String.valueOf(255));
 							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf(oct.color.get(1)));
+							dos.writeBytes(String.valueOf(0));
 							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf(oct.color.get(2)));
+							dos.writeBytes(String.valueOf(0));
 							dos.writeByte('\r');
 							dos.writeByte('\n');
 						 }
@@ -190,6 +199,9 @@ public class hough {
 				}
 			} catch (IOException e) {
 			}		
+		}
+		if( DEBUG ) {
+			System.out.println("***octree_t debug write "+f.getPath()+" coplanar regions="+nodes.size()+" total points="+totalPoints);
 		}
 		
 	}
@@ -257,9 +269,10 @@ public class hough {
 	}
 	Vector4d centroid = father.m_centroid.divide(father.m_points.size());
 	// establish farthest distance between any 2 points on any axis.
-	for(Vector4d  v : father.m_points) {
-	      v = v.subtract(centroid);
-	      max_distance =Math.max(max_distance,Math.abs(v.x));
+	for(Vector4d  vx : father.m_points) {
+		// v = v.subtract(centroid);
+	      Vector4d v = vx.subtract(centroid);
+	      max_distance = Math.max(max_distance,Math.abs(v.x));
 	      max_distance = Math.max(max_distance,Math.abs(v.y));
 	      max_distance = Math.max(max_distance,Math.abs(v.z));
 	      // length is vector magnitude from origin

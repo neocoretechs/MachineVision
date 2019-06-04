@@ -20,6 +20,10 @@ public class hough_settings {
 	  public static final double s_ps = 2;//0.002;
       // relative tolerances associated with plane thickness (s_alpha) and plane isotropy (s_beta)
 	  // thickness < settings.max_thickness && isotropy > settings.min_isotropy
+	  // s_alpha and s_beta are scaling factors defining relative tolerances for the acceptable amount
+	  // of off-plane displacement (i.e., noise) and degree of sample anisotropy on the
+	  // cluster. According to our experience, s_alpha = 25 and s_beta = 6 produce good
+	  // results
       public static final double max_thickness = .5; //1/25=.04
       public static final double min_isotropy = .01;  //1/6 = .166
 	  public static final int s_level = 4;

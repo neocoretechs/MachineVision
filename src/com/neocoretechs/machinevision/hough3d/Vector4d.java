@@ -48,60 +48,36 @@ Vector4d set(Vector4d v) {
 }
 
 Vector4d add(Vector4d v) {
-   x += v.x;
-   y += v.y;
-   z += v.z;
-   return this;
+   return new Vector4d(x + v.x, y + v.y, z + v.z, w + v.w);
 }
 
 Vector4d subtract(Vector4d v) {
-   x -= v.x;
-   y -= v.y;
-   z -= v.z;
-   return this;
+   return new Vector4d(x - v.x, y - v.y, z - v.z, w - v.w);
 }
 
 Vector4d add(double val) {
-   x += val;
-   y += val;
-   z += val;
-   return this;
+   return new Vector4d(x + val, y + val, z + val, w + val);
 }
 
 Vector4d subtract(double val) {
-   x -= val;
-   y -= val;
-   z -= val;
-   return this;
+   return new Vector4d(x - val, y - val, z - val, w - val);
 }
 
 Vector4d multiply(double val) {
-   x *= val;
-   y *= val;
-   z *= val;
-   return this;
+   return new Vector4d(x * val,y * val, z * val, w * val);
 }
 
 Vector4d multiply(Vector4d v) {
-   x *= v.x;
-   y *= v.y;
-   z *= v.z;
-   return this;
+   return new Vector4d(x * v.x, y * v.y, z * v.z, w * v.w);
 }
 
 
 Vector4d divide(double val) {
-   x /= val;
-   y /= val;
-   z /= val;
-   return this;
+   return new Vector4d(x / val, y / val, z / val, w / val);
 }
 
 Vector4d divide(Vector4d v) {
-   x /= v.x;
-   y /= v.y;
-   z /= v.z;
-   return this;
+   return new Vector4d(x/v.x, y/v.y, z/v.z, w/v.w);
 }
 
 /**
@@ -135,8 +111,9 @@ static Vector4d multiply(double s, Vector4d v ){
    return new Vector4d(v.x*s, v.y*s, v.z*s, 1);
 }
 
-boolean equals(Vector4d v) {
-   return (boolean)(x == v.x && y == v.y && z == v.z && w == v.w);
+@Override
+public boolean equals(Object v) {
+   return (boolean)(x == ((Vector4d)v).x && y == ((Vector4d)v).y && z == ((Vector4d)v).z && w == ((Vector4d)v).w);
 }
 
 boolean notEquals(Vector4d v){

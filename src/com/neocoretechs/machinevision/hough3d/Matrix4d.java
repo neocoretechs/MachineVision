@@ -44,61 +44,24 @@ double get(int index1, int index2) {
    return data[index1*4+index2];
 }
 
-Matrix4d add(Matrix4d m) {
+//
+//
+Matrix4d add(Matrix4d m){
+   Matrix4d t = new Matrix4d(this);
    for (int i=0; i<16; i++)
-      data[i] += m.data[i];
-   return this;
-}
-
-
-Matrix4d subtract(Matrix4d m) {
-   for(int i=0; i<16; i++)
-      data[i] -= m.data[i];
-   return this;
-}
-
-Matrix4d multiply(Matrix4d m) {
-   Matrix4d t = multiply2(m);
-   set(t); // set this to computed values
+	      t.data[i] = data[i]+m.data[i];
    return t;
 }
 
-Matrix4d add(double val) {
-   for(int i=0; i<16; i++)
-      data[i] += val;
-   return this;
-}
-
-Matrix4d subtract(double val) {
-   for(int i=0; i<16; i++)
-      data[i] -= val;
-   return this;
-}
-
-Matrix4d multiply(double val) {
-   for(int i=0; i<16; i++)
-      data[i] *= val;
-   return this;
-}
-
-Matrix4d divide(double val) {
-   for(int i=0; i<16; i++)
-      data[i] /= val;
-   return this;
-}
-
-Matrix4d add2(Matrix4d m){
+Matrix4d subtract(Matrix4d m) {
    Matrix4d t = new Matrix4d(this);
-   return t.add(m);
-}
-
-Matrix4d subtract2(Matrix4d m) {
-   Matrix4d t = new Matrix4d(this);
-   return t.subtract(m);
+   for (int i=0; i<16; i++)
+	      t.data[i] = data[i]-m.data[i];
+   return t;
 }
 
 
-Matrix4d multiply2(Matrix4d m) {
+Matrix4d multiply(Matrix4d m) {
    Matrix4d t = Zeros();
    int i, j, k;
    for (i=0; i<4; i++)
@@ -108,29 +71,38 @@ Matrix4d multiply2(Matrix4d m) {
    return t;
 }
 
-Matrix4d add2(double val) {
+Matrix4d add(double val) {
    Matrix4d t = new Matrix4d(this);
-   return t.add(val);
+   for (int i=0; i<16; i++)
+	      t.data[i] = data[i]+val;
+   return t;
 }
 
-Matrix4d subtract2(double val) {
+Matrix4d subtract(double val) {
    Matrix4d t = new Matrix4d(this);
-   return t.subtract(val);
+   for (int i=0; i<16; i++)
+	      t.data[i] = data[i]-val;
+   return t;
 }
 
-Matrix4d multiply2(double val) {
+Matrix4d multiply(double val) {
    Matrix4d t = new Matrix4d(this);
-   return t.multiply(val);
+   for (int i=0; i<16; i++)
+	      t.data[i] = data[i] * val;
+   return t;
 }
 
-Matrix4d divide2(double val){
+Matrix4d divide(double val){
    Matrix4d t = new Matrix4d(this);
-   return t.divide(val);
+   for (int i=0; i<16; i++)
+	      t.data[i] = data[i] / val;
+   return t;
 }
 
-public boolean equals(Matrix4d m) {
+@Override
+public boolean equals(Object m) {
    for(int i=0; i<16; i++)
-      if (data[i] != m.data[i]) return false;
+      if (data[i] != ((Matrix4d)m).data[i]) return false;
    return true;
 }
 
