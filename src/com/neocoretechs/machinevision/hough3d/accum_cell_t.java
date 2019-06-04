@@ -2,16 +2,20 @@ package com.neocoretechs.machinevision.hough3d;
 
 import java.util.ArrayList;
 
-public class accum_cell_t {
+public final class accum_cell_t {
 	/**
 	 * An accumulator cell (theta, phi) with an array of (rho) cells
 	 * @author jg
 	 *
 	 */
 	  ArrayList<octree_t> ref_node = new ArrayList<octree_t>();
-	  octree_t last_node_voted;
-	  boolean peak, visited, voted, top;
-	  float last_cast_vote, bin;
+	  private octree_t last_node_voted;
+	  boolean peak; // set when we start accumulating planes, for each plane we use accumulator.at(theta, phi, rho) to get here
+	  boolean visited; // determines if its a neighbor that has been visited in peak_detection detect
+	  boolean voted; // set from cast_vote. If the kernel.node doesnt pass verify_cell
+	  boolean top; // set from voting gaussian_vote_3d
+	  float last_cast_vote; // set from voting cast_vote
+	  float bin; // set from voting cast_vote AND accumulatorball_t convolution_value
 
 	   public accum_cell_t() {
 	      last_cast_vote = 0;
@@ -22,13 +26,17 @@ public class accum_cell_t {
 	      peak = false;
 	      bin = 0;
 	   }
-
+	   // called from voting cast_vote
 	   boolean verify_cell(octree_t ref) {
-	      return (last_node_voted==ref);
+		  if( last_node_voted == null )
+			  return false;
+	      return (last_node_voted.equals(ref));
 	   }
+	   // called from cast_vote
 	   void apply_cell(octree_t ref) {
 	      last_node_voted = ref;
 	   }
+	   // called from voting cast_vote
 	   public void add_reference(octree_t ref){
 	      ref_node.add(ref);
 	   }

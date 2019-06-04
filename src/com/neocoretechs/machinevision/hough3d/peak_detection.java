@@ -27,7 +27,7 @@ public final class peak_detection {
       accum_cell_t cell = accum.at(bin.theta_index, bin.phi_index, bin.rho_index);
       bin.votes = accum.convolution_value( bin.theta_index, bin.phi_index, bin.rho_index);
       if( DEBUG )
-    	  System.out.println(bin);
+    	  System.out.println("peak_detection detect bin="+bin);
    }
    // Sort the Auxiliary Array (AA - Convoluted Voted Cells) in descending order 
    //std::stable_sort

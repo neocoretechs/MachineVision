@@ -1,5 +1,6 @@
 package com.neocoretechs.machinevision.hough3d;
 
+import java.awt.Color;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -66,7 +67,7 @@ public class hough {
 		}
 		System.out.println("Peak detection..");
 	}
-   // Peak Detection Procedure
+   // Peak Detection Procedure, sets the accumulator_cell 'visited' flag
    peak_detection.detect(planes, accum, used_bins);
 	if( DEBUG) {
 		ArrayList<ArrayList<accum_ball_cell_t>> ab = accum.getData();
@@ -132,28 +133,12 @@ public class hough {
 			dos = new DataOutputStream(new FileOutputStream(f));
 			for(plane_t p : planes) {
 				for(octree_t o : p.nodes) {
-				  for(int i = 0; i < o.m_indexes.size() ; i++) {
-					dos.writeBytes(String.valueOf( o.m_root.m_points.get(o.m_indexes.get(i)).x));
-					dos.writeByte(' ');
-					dos.writeBytes(String.valueOf( o.m_root.m_points.get(o.m_indexes.get(i)).y));
-					dos.writeByte(' ');
-					dos.writeBytes(String.valueOf(o.m_root.m_points.get(o.m_indexes.get(i)).z)); // Z
-					dos.writeByte(' ');
-					dos.writeBytes(String.valueOf(255));
-					dos.writeByte(' ');
-					dos.writeBytes(String.valueOf(0));
-					dos.writeByte(' ');
-					dos.writeBytes(String.valueOf(0));
-					dos.writeByte('\r');
-					dos.writeByte('\n');
-				  }
+					writeChildren(o, dos);
 				}
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			return;
-		} catch (IOException e) {
-			e.printStackTrace();
 		} finally {
 			try {
 				if( dos != null ) {
@@ -164,6 +149,36 @@ public class hough {
 			}		
 		}
 		
+	}
+
+	private static void writeChildren(octree_t oct, DataOutputStream dos) {
+		try {
+		  for(int i = 0; i < oct.m_indexes.size() ; i++) {
+			dos.writeBytes(String.valueOf( oct.m_root.m_points.get(oct.m_indexes.get(i)).x));
+			dos.writeByte(' ');
+			dos.writeBytes(String.valueOf( oct.m_root.m_points.get(oct.m_indexes.get(i)).y));
+			dos.writeByte(' ');
+			dos.writeBytes(String.valueOf(oct.m_root.m_points.get(oct.m_indexes.get(i)).z)); // Z
+			dos.writeByte(' ');
+			dos.writeBytes(String.valueOf(oct.color.get(0)));
+			dos.writeByte(' ');
+			dos.writeBytes(String.valueOf(oct.color.get(1)));
+			dos.writeByte(' ');
+			dos.writeBytes(String.valueOf(oct.color.get(2)));
+			dos.writeByte('\r');
+			dos.writeByte('\n');
+		  }
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		if (oct.m_children != null) {
+		     for (short i = 0; i < 8 ; i++) {
+		         writeChildren(oct.m_children[i], dos);
+		     }
+		}
 	}
   /**
    * Command line invocation of 3dKHT process, reading from file in command line with path set in hough_settings

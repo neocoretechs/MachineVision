@@ -26,6 +26,8 @@ public final class voting {
 	/**
 	 * Cast a vote, this is where elements are finally added to used_bins upon first vote
 	 * indicated by cell.verify_cell(kernel.node);
+	 * 
+	 * Update the majority of elements in 'cell' including bin, last_cast_vote, voted, bin
 	 * @param used_bins
 	 * @param cell accumulator ball cell
 	 * @param kernel
@@ -41,7 +43,7 @@ public final class voting {
 			// Test if the previous vote was smaller than the current 
 			if (cell.last_cast_vote < votes) {
 				// Remove 
-				cell.bin += -cell.last_cast_vote+votes;
+				cell.bin += ((-cell.last_cast_vote) + votes);
 				cell.last_cast_vote = (float) votes;
 			}
 			else {
@@ -59,7 +61,7 @@ public final class voting {
 				used_bins.add(new bin_t(t, (short)p, (short)r));
 				cell.voted = true;
 			}
-			// Track last node that votes for this cell
+			// Track last node that votes for this cell, set last_node_voted to kernel.node
 			cell.apply_cell(kernel.node);
 		}
 		return true;
@@ -93,7 +95,7 @@ public final class voting {
 		for (rho_index = (int) tpr[2]/*rho_start_index*/, rho = 0.0 ;; rho_index += inc_rho_index, rho += inc_rho) {
 			if (rho_index < 0) inc_rho_index *= -1;
 			double[] tprx = new double[]{t, p, rho_index};
-			if (!accum.process_rho(tprx)) {
+			if (!accum.process_rho(tprx)) {//if (accum.process_rho(t, p, rho_index) == false) break;
 				t = tprx[0]; p = (int) tprx[1]; rho_index = (int) tprx[2];
 				break;
 			}
@@ -217,7 +219,10 @@ public final class voting {
 	}
 
 	/**
-	 * Calculates gaussian kernel parameters
+	 * Calculates gaussian kernel parameters.
+	 * creates a new kernel_t, assigns octree node to it, computes normals in node, does process_limits, get_index in
+	 * accumulator with kernel theta,phi,rho indexes and values, does a kernel_load_parameters on kernel, and finally
+	 * adds new kernel to used_kernels.
 	 * @param node
 	 * @param accum
 	 * @param used_kernels
@@ -234,14 +239,19 @@ public final class voting {
 		accum.process_limits(kernel.thetaPhiRhoIndex/*kernel.theta_index, kernel.phi_index, kernel.rho_index*/);
 		// fill kernel.theta_index, kernel.phi_index, kernel.rho_index from the calculated values of kernel theta, phi, rho
 		accum.get_index(kernel/*kernel.theta, kernel.phi, kernel.rho */);
+		// get_index forms thetaPhiRhoIndex in kernel
 		kernel.thetaPhiRhoIndex[0]/*theta_index*/ = accum.fix_theta(kernel.thetaPhiRhoIndex[0]/*theta_index*/,(int) kernel.thetaPhiRhoIndex[1]/*phi_index*/);
 		kernel.kernel_load_parameters(max_point_distance);
 		used_kernels.add(kernel);
 	}
 
 	/**
-	 * search nodes for kernel calculation. If 'root' is coplanar, perform kernel_calculation
-	 * otherwise if not a leaf node recursively call this method on the children of 'root' 
+	 * Recursively search nodes for kernel calculation. If 'root', the passed node, is coplanar, perform kernel_calculation,
+	 * otherwise, if not a leaf node recursively call this method on the children of 'root'.
+	 * In effect, recursively traverse octree until we find region marked as coplanar, then call kernel_calculation which
+	 * creates a new kernel_t, assigns octree node to it, computes normals in node, does process_limits, get_index in
+	 * accumulator with kernel theta,phi,rho indexes and values, does a kernel_load_parameters on kernel, and finally
+	 * adds new kernel to used_kernels.
 	 * @param root
 	 * @param accumulator
 	 * @param used_kernels

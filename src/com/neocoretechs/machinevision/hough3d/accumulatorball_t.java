@@ -108,7 +108,7 @@ public class accumulatorball_t {
       //tempCell.add(t, new accum_ball_cell_t(m_rho_length));
    }
    /**
-    * 
+    * called from peak_detection.detect, determines if any neighbors have been visited.
     * @param theta_index
     * @param phi_index
     * @param rho_index
@@ -120,6 +120,18 @@ public class accumulatorball_t {
          if (cell.visited) return true;
       }
       return false;
+   }
+   /**
+    * called form peak_detection.detect, sets all neighbors as visited.
+    * @param theta_index
+    * @param phi_index
+    * @param rho_index
+    */
+   void set_visited(double theta_index, short phi_index, short rho_index) {
+      ArrayList<accum_cell_t> neighbors = get_neighbors(theta_index, phi_index, rho_index, 27);
+      for (accum_cell_t cell : neighbors) {
+            cell.visited = true;
+      }
    }
    /**
     * Get the accum_cell_ t neighbors at theta, phi,rho up to passed limit, 
@@ -166,18 +178,7 @@ public class accumulatorball_t {
    double normalization_factor(int phi_index) {
       return 360.0 / (double)m_data.get(phi_index).size();
    }
-   /**
-    * 
-    * @param theta_index
-    * @param phi_index
-    * @param rho_index
-    */
-   void set_visited(double theta_index, short phi_index, short rho_index) {
-      ArrayList<accum_cell_t> neighbors = get_neighbors(theta_index, phi_index, rho_index, 27);
-      for (accum_cell_t cell : neighbors) {
-            cell.visited = true;
-      }
-   }
+  
    /**
     * 
     * @param phi_index
@@ -346,7 +347,7 @@ public class accumulatorball_t {
 	return phiSize == 0 ? 0 : ((int)(Math.round(theta * (double)(phiSize))) % phiSize);
    }
    /**
-    * Form the kernel index from the values of theta, phi , rho in the kernel
+    * Form the kernel index thetaPhiRhoIndexfrom the values of theta, phi , rho in the kernel
     * @param kernel
     */
    void get_index(kernel_t kernel) {

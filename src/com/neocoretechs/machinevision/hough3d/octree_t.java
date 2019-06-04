@@ -14,6 +14,8 @@ import java.util.ArrayList;
  */
 public final class octree_t {
    public static final double EPS = 1.E-3;
+   private static long octreeNum = 0;
+   protected long octoNum;
    Matrix3 fast_covariance_matrix = new Matrix3();
    Matrix3 m_covariance = new Matrix3();
    ArrayList<Vector4d> m_points = null;//new ArrayList<Vector4d>();
@@ -41,6 +43,7 @@ public final class octree_t {
      color = new Vector4d(0.5,0.5,0.5);
      variance1 = variance2 = variance3 = 0.0;
      votes= 0;
+     ++octreeNum; // increment monotonically increasing number to identify this node for comparison
   }
    /**
     * Special root node c'tor sets coplanar false, creates a centroid at 0,0,0 and sets color.
@@ -349,7 +352,10 @@ public final class octree_t {
       }
    }
 }
-
+  @Override 
+  public boolean equals(Object onode) {
+	   return ((octree_t)onode).octoNum == octoNum;
+  }
 /*
 void octree_t::print_points()
 {
