@@ -4,18 +4,18 @@ package com.neocoretechs.machinevision.hough3d;
  * Settings to drive planar detection process.
  * s_ms is minimum size of m_indexes array to limit recursion.
  * s_ms MUST be > 0 and large enough to prevent depth recursion from blowing the stack.
- * s_level determines the level at which m_level we check for variance direction
- * and potentially remove outliers that are greater than m_size/10 from the plane we are trying to form.
- * max_thickness and min_isotropy determine when we
- * remove outliers, compute least_variance_direction again, and set coplanar to true.
- * max_point_distance seems to affect delta-rho
+ * s_level determines the level at which m_level we check for variance direction, therefore
+ * a higher number will detect more and smaller coplanar, or potential planar, regions.
+ * s_level >= level will potentially remove outliers that are greater than m_size/10 from the plane we are trying to form.
+ * max_thickness and min_isotropy determine when we remove outliers, compute least_variance_direction again, 
+ * and set coplanar to true.
  * @author jg
  *
  */
 public class hough_settings {
       // Accumulator discretization
-      public static final int phi_num = 30;
-      public static final int rho_num = 300;
+      public static final int phi_num = 30; // accumulator size - phi dimension
+      public static final int rho_num = 300; // accumulator size - rho dimension
 	  // Percentage of the number of points from the point cloud to stop subdividing
 	  public static final double s_ps = 2;//0.002;
       // relative tolerances associated with plane thickness (s_alpha) and plane isotropy (s_beta)
@@ -24,12 +24,12 @@ public class hough_settings {
 	  // of off-plane displacement (i.e., noise) and degree of sample anisotropy on the
 	  // cluster. According to our experience, s_alpha = 25 and s_beta = 6 produce good
 	  // results
-      public static final double max_thickness = .5; //1/25=.04
-      public static final double min_isotropy = .01;  //1/6 = .166
-	  public static final int s_level = 4;
-	  public static final int s_ms = 2;
-      public static double max_point_distance = 1;
-	  public static final double max_distance2plane = 10; //.25
+      public static final double max_thickness = 1; //1/25=.04 see above, PCA analysis
+      public static final double min_isotropy = .01;  //1/6 = .166 see above, PCA analysis
+	  public static final int s_level = 6;//determines at which octree level we check for variance direction and remove outliers
+	  public static final int s_ms = 2; // minimum number of points per octree node
+      public static double max_point_distance = 1; // used for max_point_distance/rho in accumulator voting as delta_rho rho increment value
+	  public static final double max_distance2plane = 1; //.25 determines plane coloring for points < this distance to plane
 	  // this declaration overrides any command line file name input
 	  //public static String file = "/users/jg/workspace/robocore/motionclouds/roscoe1";
 	  // this pure path declaration allows command line input of file name

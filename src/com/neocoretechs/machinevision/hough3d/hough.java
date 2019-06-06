@@ -179,9 +179,9 @@ public class hough {
 							dos.writeByte(' ');
 							dos.writeBytes(String.valueOf(255));
 							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf(0));
+							dos.writeBytes(String.valueOf(oct.m_level*10));
 							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf(0));
+							dos.writeBytes(String.valueOf(oct.m_level*10));
 							dos.writeByte('\r');
 							dos.writeByte('\n');
 						 }
@@ -215,11 +215,11 @@ public class hough {
 			dos.writeByte(' ');
 			dos.writeBytes(String.valueOf(oct.m_root.m_points.get(oct.m_indexes.get(i)).z)); // Z
 			dos.writeByte(' ');
-			dos.writeBytes(String.valueOf(oct.color.get(0)));
+			dos.writeBytes(String.valueOf((int)oct.color.get(0)));
 			dos.writeByte(' ');
-			dos.writeBytes(String.valueOf(oct.color.get(1)));
+			dos.writeBytes(String.valueOf((int)oct.color.get(1)));
 			dos.writeByte(' ');
-			dos.writeBytes(String.valueOf(oct.color.get(2)));
+			dos.writeBytes(String.valueOf((int)oct.color.get(2)));
 			dos.writeByte('\r');
 			dos.writeByte('\n');
 		  }

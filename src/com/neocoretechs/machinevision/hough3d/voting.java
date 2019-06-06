@@ -6,7 +6,7 @@ import java.util.ArrayList;
  *
  */
 public final class voting {
-	private static boolean DEBUG = false;
+	private static boolean DEBUG = true;
 
 	/**
 	 * Init by calculating kernels recursively, then casting votes for all kernels
@@ -101,6 +101,9 @@ public final class voting {
 			}
 			t = tprx[0]; p = (int) tprx[1]; rho_index = (int) tprx[2];
 			gauss = kernel.trivariated_gaussian_dist_normal(rho, phi, theta);
+			if( DEBUG ) {
+				System.out.println("voting gaussian_vote_1d RHO DIR POS theta index="+t+" phi index="+p+" rho index="+rho_index+" gauss="+gauss+" will cast vote="+(gauss < kernel.voting_limit));
+			}
 			if (gauss < kernel.voting_limit) 
 				break;
 			if ((votes = (float)(gauss)) >= (float)(0.0)) {
@@ -122,18 +125,18 @@ public final class voting {
 			t = tprx[0]; p = (int) tprx[1]; rho_index = (int) tprx[2];
 			// gaussian normal dist
 			gauss = kernel.trivariated_gaussian_dist_normal(rho, phi, theta);
+			if( DEBUG ) {
+				System.out.println("voting gaussian_vote_1d RHO DIR NEG theta index="+t+" phi index="+p+" rho index="+rho_index+" gauss="+gauss+" will cast vote="+(gauss < kernel.voting_limit));
+			}
 			if (gauss < kernel.voting_limit)
 				break;
 			if ((votes = (float)(gauss)) >= (float)(0.0)) {
-				if( DEBUG ) {
-					System.out.println("voting gaussian_vote_1d RHO DIR NEG theta index="+t+" phi index="+p+" rho index="+rho_index);
-				}
 				voted = cast_vote(used_bins, accum.at(t, (short)p,(short)rho_index), kernel, votes, t, p, rho_index);
 			} else 
 				break;
 		}
 		if( DEBUG )
-			System.out.println("voting gaussian_vote_1d after voting RHO DIR NEG returning voted="+voted);
+			System.out.println("voting gaussian_vote_1d returning voted="+voted);
 		return voted;
 	}
 

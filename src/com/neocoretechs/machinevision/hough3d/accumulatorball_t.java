@@ -14,8 +14,8 @@ public class accumulatorball_t {
 	static final short[] offset_x = {0, 0,  0,  0,  0, +1, -1,      +1, -1, +1, -1, +1, -1, -1, +1,  0,  0,  0,  0,     +1, +1, +1, -1, +1, -1, -1, -1};
     static final short[] offset_y = {0, +1, -1,  0,  0,  0,  0,      +1, -1, -1, +1,  0,  0,  0,  0, +1, -1, -1, +1,     +1, +1, -1, +1, -1, -1, +1, -1};
     static final short[] offset_z = {0, 0,  0, +1, -1,  0,  0,       0,  0,  0,  0, +1, -1, +1, -1, +1, -1, +1, -1,     +1, -1, +1, +1, -1, +1, -1, -1};
-	private static final boolean DEBUG = true;
-	private static final boolean DEBUGINITIALIZE = false;
+	private static final boolean DEBUG = false;
+	//private static final boolean DEBUGINITIALIZE = false;
 
     int neighbors_size;
 
@@ -68,39 +68,41 @@ public class accumulatorball_t {
       int t = get_theta_index(theta_index, phi_index);
       if( m_data.size() <= phi_index ) {
     	  m_data.ensureCapacity(phi_index+1);
-    	  ArrayList<accum_ball_cell_t> tempCell = new ArrayList<accum_ball_cell_t>(t+1);
-          accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-          if( DEBUGINITIALIZE )
-        	  System.out.println("accumulatorball_t initialize adding( m_data < phi_index) t="+t+" tempCell size="+tempCell.size());
-          tempCell.add(t, tempAbc);
-          if( DEBUGINITIALIZE )
-        	  System.out.println("accumulatorball_t initialize adding (m_data < phi_index) phi_index="+phi_index+" m_data size="+m_data.size());
-          m_data.add(phi_index, tempCell);
+          if( DEBUG )
+        	  System.out.println("accumulatorball_t initialize ADDING (m_data < phi_index) phi_index="+
+        			  phi_index+" m_data="+m_data.size()+" t="+t+" tempCell size="+(t+1));
+    	  for(int j = m_data.size(); j <= phi_index; j++) {
+    	 	  ArrayList<accum_ball_cell_t> tempCell = new ArrayList<accum_ball_cell_t>(t+1);
+    		  for(int i = 0; i <= t; i++) { // pack thetas
+    			  tempCell.add(/*t*/ (new accum_ball_cell_t(m_rho_length)));
+    		  }
+    		  m_data.add(j/*phi_index*/, tempCell);
+    	  }
           return;
       }
-      if( DEBUGINITIALIZE )
-      	  System.out.println("accumulatorball_t initialize GETTING tempCell from phi="+phi_index+" m_data size="+m_data.size());
+      // phi_index is valid in m_data
+      //if( DEBUGINITIALIZE )
+      //	  System.out.println("accumulatorball_t initialize GETTING tempCell from phi="+phi_index+" m_data size="+m_data.size());
       ArrayList<accum_ball_cell_t> tempCell = m_data.get(phi_index);
-      if(tempCell == null) {
+      //if(tempCell == null) {
 		//m_data(phi_index) = 
-    	tempCell = new ArrayList<accum_ball_cell_t>(t+1);
-        accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-        if( DEBUGINITIALIZE )
-      	  System.out.println("accumulatorball_t initialize adding (tempCell==null) t="+t+" tempCell size="+tempCell.size());
-      	tempCell.add(t, tempAbc);
-        if( DEBUGINITIALIZE )
-      	  System.out.println("accumulatorball_t initialize adding (tempCell==null) phi_index="+phi_index+" m_data size="+m_data.size());
-    	m_data.add(phi_index, tempCell);
-    	return;
-      }
+    	//tempCell = new ArrayList<accum_ball_cell_t>(t+1);
+        //if( DEBUGINITIALIZE )
+      	//  System.out.println("accumulatorball_t initialize ADDING (tempCell==null) phi_index="+phi_index+" m_data size="+m_data.size()+" t="+t+" tempCell size="+tempCell.size());
+      	//tempCell.add(t, (new accum_ball_cell_t(m_rho_length)));
+    	//m_data.add(phi_index, tempCell);
+    	//return;
+      //}
       // m_data[phi_index][t] =  new accum_ball_cell_t(m_rho_length);
       // tempCell not null, but may be too small
       if(tempCell.size() <= t) {
     	  tempCell.ensureCapacity(t+1);
-          accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-          if( DEBUGINITIALIZE )
-          	  System.out.println("accumulatorball_t initialize adding tempCell (size <=t) t="+t+" tempCell size="+tempCell.size());
-          for(int i = tempCell.size(); i <= t; i++) tempCell.add(i/*t*/, tempAbc);
+          if( DEBUG )
+          	  System.out.println("accumulatorball_t initialize ADDING (m_data @ phi_index) phi_index="+
+        			  phi_index+" m_data="+m_data.size()+" t="+t+" tempCell size="+(t+1));
+          for(int i = tempCell.size(); i <= t; i++) {
+        	  tempCell.add(/*t*/(new accum_ball_cell_t(m_rho_length)));
+          }
           return;
       }
       //if( DEBUG )
@@ -304,47 +306,53 @@ public class accumulatorball_t {
     * @return bins[rho] of get_theta_index(theta,phi)
     */
    accum_cell_t at(double theta_index, short phi_index, short rho_index) {
-	   //if(t == -1 || m_data.get(phi).get(t) == null)
-	   //   m_data.get(phi).get(t).set(new accum_ball_cell_t(m_rho_length));
+	   //int t = get_theta_index(theta,phi);
+	   //   if (m_data[phi][t] == NULL)
+	   //      m_data[phi][t] =  new accum_ball_cell_t(m_rho_length);
+	   //   return m_data[phi][t]->bins[rho];
       int t = get_theta_index(theta_index,phi_index);
       if( m_data.size() <= phi_index ) {
     	  m_data.ensureCapacity(phi_index+1);
-    	  ArrayList<accum_ball_cell_t> tempCell = new ArrayList<accum_ball_cell_t>(t+1);
-          accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-          tempCell.add(t, tempAbc);
-          m_data.add(phi_index, tempCell);
-          return tempAbc.bins[rho_index];
+          if( DEBUG )
+        	  System.out.println("accumulatorball_t at ADDING (m_data < phi_index) from m_data="+m_data.size()+" to phi_index="+
+        			  (phi_index+1)+" from 0 to t="+(t+1));
+    	  for(int j = m_data.size(); j <= phi_index; j++) {
+    	 	  ArrayList<accum_ball_cell_t> tempCell = new ArrayList<accum_ball_cell_t>(t+1);
+    		  for(int i = 0; i <= t; i++) // pack thetas
+    			  tempCell.add(/*t*/ (new accum_ball_cell_t(m_rho_length)));
+    		  m_data.add(j/*phi_index*/, tempCell);
+    	  }
       }
       //if( DEBUG )
-    	//  System.out.println("accumulatorball_t at getting "+phi_index+" from "+m_data.size());
+      //  System.out.println("accumulatorball_t at getting "+phi_index+" from "+m_data.size());
       ArrayList<accum_ball_cell_t> tempCell = m_data.get(phi_index);
-      if(tempCell == null) {
+      //if(tempCell == null) {
 		//m_data(phi_index) = 
-    	tempCell = new ArrayList<accum_ball_cell_t>(t+1);
-    	accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-    	tempCell.add(t, tempAbc);
-       	m_data.add(phi_index, tempCell);
-    	return tempAbc.bins[rho_index];
+    	//tempCell = new ArrayList<accum_ball_cell_t>(t+1);
+    	//accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
+    	//tempCell.add(t, tempAbc);
+       	//m_data.add(phi_index, tempCell);
+    	//return tempAbc.bins[rho_index];
     	// m_data[phi_index][t] =  new accum_ball_cell_t(m_rho_length);
-      }
+      //}
       // tempCell not null, but may be too small
       if(tempCell.size() <= t) {
     	  tempCell.ensureCapacity(t+1);
-          accum_ball_cell_t tempAbc = new accum_ball_cell_t(m_rho_length);
-          //tempCell.add(t, tempAbc);
-          for(int i = tempCell.size(); i <= t; i++) tempCell.add(i/*t*/, tempAbc);
-          return tempAbc.bins[rho_index];
+          if( DEBUG )
+        	  System.out.println("accumulatorball_t at ADDING (m_data @ phi_index) phi_index="+
+        			  phi_index+" of m_data="+m_data.size()+" from cell size="+tempCell.size()+" to t="+(t+1));
+          for(int i = tempCell.size(); i <= t; i++) 
+        	  tempCell.add(i/*t*/, (new accum_ball_cell_t(m_rho_length)));
       }
+      if( DEBUG )
+    	  System.out.println("accumulatorball_t at returning accum_cell_t @ phi_index="+phi_index+" theta_index="+t+" rho_index="+rho_index+" bins[rho_index]="+tempCell.get(t).bins[rho_index]);
       return tempCell.get(t).bins[rho_index];
    }
 	/**
 	* Call with size of m_data for phi index, multiply theta by size of phi index and round
 	*/
-   private int get_theta_index(double theta, int phiSize){
-	//ArrayList<accum_ball_cell_t> tempAccum = m_data.get(phi_index);
-	//if( tempAccum == null )
-	//	return -1;
-	return phiSize == 0 ? 0 : ((int)(Math.round(theta * (double)(phiSize))) % phiSize);
+   private int get_theta_index(double theta, int phiSize) {
+	   return phiSize == 0 ? 0 : ((int)(Math.round(theta * (double)(phiSize))) % phiSize);
    }
    /**
     * Form the kernel index thetaPhiRhoIndexfrom the values of theta, phi , rho in the kernel
