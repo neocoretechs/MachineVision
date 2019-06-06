@@ -6,6 +6,7 @@ import java.util.Collections;
  * Detect peaks in the spherical accumulator cells. votes in the bin are updated,
  * used_bins is sorted and used to build planes.
  * The accumulator ball actually gets manipulated mostly during this phase.
+ * iterate over accumulator detecting cells not adjacent to already inspected ones.
  * @author jg
  *
  */
@@ -39,15 +40,22 @@ public final class peak_detection {
          // fill new plane instance with p.m_theta, p.m_phi, p.m_rho,
          accum.get_values( p, bin.theta_index, bin.phi_index, bin.rho_index);
          p.nodes = accum.convolution_nodes(bin.theta_index, bin.phi_index, bin.rho_index);
-         p.representativeness = 0;
-         p.votes = bin.votes;
-         p.calculate();
-         p.ti = bin.theta_index;
-         p.pi = bin.phi_index;
-         p.ri = bin.rho_index;
-         planes.add(p);
-         if( DEBUG )
-        	 System.out.println("added plane "+p);
+         if( !p.nodes.isEmpty() ) {
+        	 p.representativeness = 0;
+        	 p.votes = bin.votes;
+        	 p.calculate();
+        	 p.ti = bin.theta_index;
+        	 p.pi = bin.phi_index;
+        	 p.ri = bin.rho_index;
+        	 planes.add(p);
+        	 if( DEBUG ) {
+        		 System.out.println("added plane "+p);
+        	 }
+         } else {
+        	 if( DEBUG ) {
+        		 System.out.println("accumulatorball_t detect no nodes returned from convolution_nodes, so plane not added");
+        	 } 	 
+         }
       }
       accum.set_visited( bin.theta_index, bin.phi_index, bin.rho_index );
    }

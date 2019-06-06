@@ -2,14 +2,20 @@ package com.neocoretechs.machinevision.hough3d;
 import java.util.ArrayList;
 /**
  * Cast votes for elements in the accumulator ball using gaussian kernel, our used bins and octree nodes.
+ * Starting at the center of the 3-D Gaussian kernel representing the position, orientation, and uncertainties of the best-
+ * fitting plane for a given cluster, the voting procedure iterates away from the
+ * kernel's center up to two standard deviations storing votes in the accumulator's
+ * cells. This provides a 95.4% assurance that the selected region of the parameter space receiving votes covers the true plane.
  * @author jg
  *
  */
 public final class voting {
-	private static boolean DEBUG = true;
+	private static boolean DEBUG = false;
 
 	/**
-	 * Init by calculating kernels recursively, then casting votes for all kernels
+	 * Init by calculating kernels recursively, then casting votes for all kernels.
+	 * This is the only public entry point to this module. 
+	 * We build our kernel collection based on passed params.
 	 * @param root
 	 * @param accumulator
 	 * @param used_bins

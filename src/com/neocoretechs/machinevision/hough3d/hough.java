@@ -39,25 +39,33 @@ public class hough {
    * @return
    */
   accumulatorball_t kht3d( ArrayList<plane_t> planes, octree_t father, hough_settings settings) {//double max_distance, double distance_discretization, int phi_cells_length )
+	  long startTime = System.currentTimeMillis();
+	  long totalTime = startTime;
 	if( DEBUG) {
 		System.out.println("Subdivide...");
 	}
    // Subdividing Procedure
    father.subdivide(settings);
+   if( DEBUG )
+	   System.out.println("Elapsed Subdivide took "+(System.currentTimeMillis()-startTime)+" ms.");
    // debug write octree with coplanar flags
    writeChildren(father);
    // Initializes the Accumulator, nothing really happens in accumulator until the voting process
 	if( DEBUG) {
 		System.out.println("Build accumulator...");
+		startTime = System.currentTimeMillis();
 	}
    accumulatorball_t accum = new accumulatorball_t(settings.max_point_distance, settings.rho_num, settings.phi_num);
 	if( DEBUG) {
+		System.out.println("Elapsed accumulator build took "+(System.currentTimeMillis()-startTime)+" ms.");
+		startTime = System.currentTimeMillis();
 		System.out.println("Begin voting...Accum cells="+accum.getData().size());
 	}
    // Voting Procedures
    ArrayList<bin_t> used_bins = new ArrayList<bin_t>();
    voting.vote(father, accum, used_bins, settings.max_point_distance);
 	if( DEBUG) {
+		System.out.println("Elapsed voting took "+(System.currentTimeMillis()-startTime)+" ms.");
 		ArrayList<ArrayList<accum_ball_cell_t>> ab = accum.getData();
 		System.out.println(">>>>Accum cells="+ab.size());
 		for(int i = 0; i < ab.size(); i++) {
@@ -67,22 +75,28 @@ public class hough {
 				System.out.println(ab.get(i).get(j)); // get accum_ball_cell_t
 			}
 		}
+		startTime = System.currentTimeMillis();
 		System.out.println("Peak detection..");
 	}
    // Peak Detection Procedure, sets the accumulator_cell 'visited' flag
    peak_detection.detect(planes, accum, used_bins);
 	if( DEBUG) {
+		System.out.println("Elapsed peak detection took "+(System.currentTimeMillis()-startTime)+" ms.");
 		ArrayList<ArrayList<accum_ball_cell_t>> ab = accum.getData();
 		System.out.println("Accum cells="+ab.size());
 		for(int i = 0; i < ab.size(); i++) {
 			System.out.println("accum cell "+i+" size="+ab.get(i).size());
 		}
+		startTime = System.currentTimeMillis();
 		System.out.println("Peaks detected, accumulate planes..");
+		
 	}
    for (plane_t p : planes) {
       accum.at(p.ti,(short)p.pi,(short)p.ri).peak = true;
    }
 	if( DEBUG) {
+		System.out.println("Elapsed plane accumulation took "+(System.currentTimeMillis()-startTime)+" ms.");
+		startTime = System.currentTimeMillis();
 		System.out.println("Sort planes by representativeness...");
 	}
    // Sorting planes by representativeness

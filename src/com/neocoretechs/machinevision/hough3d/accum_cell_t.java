@@ -4,7 +4,11 @@ import java.util.ArrayList;
 
 public final class accum_cell_t {
 	/**
-	 * An accumulator cell (theta, phi) with an array of (rho) cells
+	 * An accumulator cell (theta, phi) which constitutes an array of (rho) cells,
+	 * AKA bins, in accum_ball_cell_t. The collection of accum_ball_cell_t is at the theta index,
+	 * and the phi index is the first index into m_data in acumulatorball_t, which is a phi collection 
+	 * of the collections of thetas that hold the array of rho, all of which make up the spherical 
+	 * surface of the accumulator ball.
 	 * @author jg
 	 *
 	 */

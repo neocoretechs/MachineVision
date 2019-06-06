@@ -50,11 +50,29 @@ public class kernel_t {
     //int rho_index;
     double[] thetaPhiRhoIndex = new double[3];
 
-    int votes;
+    //int votes;
 
     Matrix3 covariance_rpt_normal;
     Matrix3 covariance_rpt_inv_normal;
-
+    /**
+     * Called from voting kernel_calculation. Calculates voting_limit from trivariate gaussian distance normal.
+     * Uses covariance matrix multiplied by jacobian normal multiplied by transposed normal jacobian matrix to produce
+     * normal covariance matrix to generate the uncertainty propagation.
+     * Element 0,0 of matrix has a fractional non-zero value added, then the matrix is inverted.
+     * The square root of the absolute value of the determinant is
+     * multiplied by 2.0*Math.sqrt(2.0)*Math.pow(Math.PI,1.5) to produce a scalar constant normal product.
+     * The normal covariance matrix is subjected to eigenvalue decomposition and the resulting vector and matrix are
+     * extracted to obtain the cluster representativeness .
+     * The area importance (w_a) is set at .75 and number of points importance (w_d) is set to 1-w_a.
+     * w_a and w_d are the weights associated with relative area and relative number of samples, such that wa + wd = 1.
+     * The m_size of the node is divided by root size times w_a added to number of points in this cluster divided by total
+     * number of points times w_d to produce the representativeness of the node.
+     * The eigenvalues vector is sorted to set up the voting limit calculation (g_min).
+     * The radius is defined as 2 standard deviations multiplied by the minimum eigenvalues vector element.
+     * The min index column of the eigenvectors matrix is multiplied by the radius to get the rho,phi,theta to pass to the
+     * trivariate gaussian distance normal function. the voting_limit is set to the return from that function.
+     * @param max_point_distance
+     */
    void kernel_load_parameters(double max_point_distance)  {
 	  Matrix3 covariance_xyz = node.m_covariance;
 	  Matrix3 jacobian_normal = new Matrix3();
@@ -112,11 +130,11 @@ public class kernel_t {
 													   eigenvectors_matrix.get(1, min_index) * radius, 
 													   eigenvectors_matrix.get(2, min_index) * radius);
       if(DEBUG)
-    	  System.out.println("kernel voting limit="+voting_limit);
+    	  System.out.println("kernel_t kernel_load_parameters voting limit="+voting_limit);
    }
 
    /**
-    * Sampling the Trivariate Gaussian Distribution.
+    * Sampling the Trivariate Gaussian Distribution. Called from voting.gaussian_vote_1d and kernel_load_parameters
     * Once we have computed the variances and covariances associated with
 	* theta, phi, and rho, the votes are cast in the spherical accumulator using a
 	* trivariate Gaussian distribution. For the multivariate non-degenerate case,

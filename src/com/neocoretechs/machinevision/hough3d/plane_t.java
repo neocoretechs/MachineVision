@@ -29,8 +29,8 @@ public class plane_t {
    ArrayList<Vector4d> m_points;
    public plane_t() {}
    /**
-    * A lot of the planar elements are set in peak_detect.detect.
-    * this method called from there after some initialization.
+    * A lot of the planar elements are set in peak_detection.detect, from where this is called.
+    * This method called from there after some initialization.
     * From theta, phi, rho and nodes in octree, calculate the centroids, the normals, etc of the planes.
     * Everything affecting the 'm_' members.
     * nodes = accum.convolution_nodes(bin.theta_index, bin.phi_index, bin.rho_index);
@@ -133,6 +133,11 @@ public class plane_t {
       }
    }
 */
+   /**
+    * Only used in plane coloring, therefore efficiency not critical
+    * @param point
+    * @return
+    */
    double distance2plane( Vector4d point ) {
 	return Math.abs((point.subtract(m_position)).and(m_normal.Normalized()));
    }

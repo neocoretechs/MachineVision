@@ -282,7 +282,11 @@ public final class octree_t {
    return covariance;
   }
    /**
-    * Principle component analysis
+    * Principal component analysis.
+    * Since the eigenvalues of the covariance matrix associated to the set of
+	* samples inside an octree node represent the proportions of the variances
+	* of the sample distribution inside that cell, they can be used to filter out
+	* clusters that could not represent planes.
     */
   private void least_variance_direction(){
 		if( DEBUGVARIANCE) {
