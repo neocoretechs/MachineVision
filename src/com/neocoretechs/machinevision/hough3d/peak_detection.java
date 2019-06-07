@@ -49,11 +49,11 @@ public final class peak_detection {
         	 p.ri = bin.rho_index;
         	 planes.add(p);
         	 if( DEBUG ) {
-        		 System.out.println("added plane "+p);
+        		 System.out.println("peak_detection detect added plane "+p);
         	 }
          } else {
         	 if( DEBUG ) {
-        		 System.out.println("accumulatorball_t detect no nodes returned from convolution_nodes, so plane not added");
+        		 System.out.println("peak_detection detect no nodes returned from convolution_nodes, so plane not added");
         	 } 	 
          }
       }

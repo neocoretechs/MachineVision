@@ -31,7 +31,7 @@ import java.util.ArrayList;
 * @author jg
 *
 */
-public class kernel_t {
+public final class kernel_t {
 	public static final double root22pi32 = 2.0*Math.sqrt(2.0)*Math.pow(Math.PI,1.5);
 	public static final double NONZERO = 0.00001;
 	private static final boolean DEBUG = true;
@@ -42,7 +42,8 @@ public class kernel_t {
     double theta;
     double phi;
 
-    double constant_normal, constant_binormal;
+    private double constant_normal;
+    //double constant_binormal;
     double voting_limit;
 
     //double theta_index;
@@ -52,8 +53,8 @@ public class kernel_t {
 
     //int votes;
 
-    Matrix3 covariance_rpt_normal;
-    Matrix3 covariance_rpt_inv_normal;
+    private Matrix3 covariance_rpt_normal;
+    private Matrix3 covariance_rpt_inv_normal;
     /**
      * Called from voting kernel_calculation. Calculates voting_limit from trivariate gaussian distance normal.
      * Uses covariance matrix multiplied by jacobian normal multiplied by transposed normal jacobian matrix to produce
@@ -94,13 +95,28 @@ public class kernel_t {
 	  jacobian_normal.set(2,1, (w<EPS2)?p.x/EPS2:p.x / w);
 	  jacobian_normal.set(2,2, 0.0);
       
+	  // Area importance (w_a) 
+      double w_a = 0.75;
+      // Number-of-points importance (w_d)
+      double w_d = 1- w_a;
+      node.representativeness = (double)node.m_size/(double)node.m_root.m_size * w_a + 
+								(double)node.m_indexes.size()/(double)node.m_root.m_points.size() * (w_d);
+
       // Uncertainty propagation
 	  Matrix3 jacobian_transposed_normal = Matrix3.transpose(jacobian_normal);
       covariance_rpt_normal = jacobian_normal.multiply(covariance_xyz).multiply(jacobian_transposed_normal);
    
       // Cluster representativeness
       covariance_rpt_normal.set(0,0, covariance_rpt_normal.get(0,0)+NONZERO);
+      // if invert comes back null then the matrix is singular, which means the samples are coplanar
       covariance_rpt_inv_normal = covariance_rpt_normal.invert();
+      if( covariance_rpt_inv_normal == null ) {
+    	  if( DEBUG ) {
+    		  System.out.println("kernel_t kernel_load_parameters covariance matrix is singular");
+    	  }
+    	  voting_limit = 0;
+    	  return;
+      }
       constant_normal = root22pi32 * Math.sqrt(Math.abs(covariance_rpt_normal.determinant()));
       //dlib::
 	  EigenvalueDecomposition eigenvalue_decomp = new EigenvalueDecomposition(covariance_rpt_normal);
@@ -109,13 +125,7 @@ public class kernel_t {
       //dlib::
 	  Matrix3 eigenvectors_matrix = eigenvalue_decomp.getV();
       
-      // Area importance (w_a) 
-      double w_a = 0.75;
-      // Number-of-points importance (w_d)
-      double w_d = 1- w_a;
-      node.representativeness = (double)node.m_size/(double)node.m_root.m_size * w_a + 
-								(double)node.m_indexes.size()/(double)node.m_root.m_points.size() * (w_d);
-
+ 
       // Sort eigenvalues
       int min_index = 0;
       if (eigenvalues_vector[min_index] > eigenvalues_vector[1])
@@ -165,6 +175,12 @@ public class kernel_t {
 	  //displacement.y = phi;
 	  //displacement.z = theta
 	  //dlib::vector<double,3> displacement(rho,phi,theta);
+      if( covariance_rpt_inv_normal == null ) {
+    	  if( DEBUG ) {
+    		  System.out.println("kernel_t trivariated_gaussian_dist_normal covariance matrix is singular");
+    	  }
+    	  return 0;
+      }
       //return (std::exp(-0.5 * (dlib::trans(displacement) * covariance_rpt_inv_normal * displacement))/constant_normal);
       // two matrix vector calcs yielding vector
       double [] trans =(Matrix3.transpose(displacement).multiply(covariance_rpt_inv_normal.multiply(displacement)));

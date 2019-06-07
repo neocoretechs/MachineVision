@@ -190,7 +190,7 @@
 	        	// Matrix has no inverse
 	        	System.out.println("***Matrix has no inverse "+this);
 	        	values = new double[9]; // scratch this matrix
-	        	return out; // return null matrix
+	        	return null;
 	        }
 	        // Perform back substitution on the identity matrix
 	        for(i=0;i<9;i++) result[i] = 0.0;
@@ -318,7 +318,8 @@
 			}
 
 			if (imax < 0) {
-			    throw new RuntimeException("imax negative");
+			    //throw new RuntimeException("imax negative");
+				return false;
 			}
 
 			// Is a row exchange necessary?

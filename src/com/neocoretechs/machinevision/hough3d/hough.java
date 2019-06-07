@@ -11,7 +11,9 @@ import java.util.Collections;
 import java.util.Comparator;
 /**
  * Primary 3D kernel hough transform driver class.
- * Subdivides quadtree, builds accumulator ball, creates bins, detects peaks, sorts planes,
+ * A robust segmentation strategy to identify clusters of approximately coplanar samples. Votes are cast for
+ * clusters as opposed to for individual samples, greatly accelerating the detection process.
+ * This class subdivides quadtree, builds accumulator ball, creates bins, detects peaks, sorts planes,
  * optionally sets the color in each plane for display and finally returns the populated accumulator ball.
  * @author jg
  *
