@@ -83,7 +83,7 @@ public class plane_t {
 	  Vector4d vert1a = m_position.add(cross);//m_position + cross
 	  Vector4d vert1s = m_position.subtract(cross);//m_position - cross
 	  Vector4d vert1ca = cross2.add(size);//size + cross2
-	  Vector4d vert1cs = cross2.subtract(size);//size - cross2
+	  Vector4d vert1cs = cross2.add(-size);//size - cross2 .. a - b = a + -b
 	  Vector4d vert1aa = m_desloc.add(size).add(cross); //size + m_desloc + cross
 	  Vector4d vertscx = cross2.add(m_scale.x);// m_scale.x + cross2
 	  Vector4d vertscy = cross2.add(m_scale.y);//m_scale.y + cross2

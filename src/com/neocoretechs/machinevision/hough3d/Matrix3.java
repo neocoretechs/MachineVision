@@ -5,7 +5,8 @@
 	 * Copyright (C) NeoCoreTechs 2019
 	 */
 	public class Matrix3 {
-	    double[] values;
+	    private static boolean DEBUG = false;
+		double[] values;
 	    
 	    Matrix3(double[] values) {
 	        this.values = values;
@@ -155,285 +156,138 @@
 	       return values[0]*(values[1*3+1]*values[2*3+2] - values[1*3+2]*values[2*3+1])
 	              + values[1]*(values[1*3+2]*values[2*3+0] - values[1*3+0]*values[2*3+2])
 	              + values[2]*(values[1*3+0]*values[2*3+1] - values[1*3+1]*values[2*3+0]);
-	    }
+	    }     
 	    
-	    /**
-	     * General invert routine.  Inverts m1 and places the result in "this".
-	     * Note that this routine handles both the "this" version and the
-	     * non-"this" version.
-	     *
-	     * Also note that since this routine is slow anyway, we won't worry
-	     * about allocating a little bit of garbage.
-	     */
-	    public final Matrix3 invert() {
-	    	Matrix3 out = new Matrix3();
-	    	double result[] = new double[9];
-	    	int row_perm[] = new int[3];
-	    	int i;
-	    	double[] tmp = new double[9];  // scratch matrix
-	    	// Use LU decomposition and backsubstitution code specifically
-	    	// for floating-point 3x3 matrices.
-	    	// Copy source matrix to t1tmp
-	        tmp[0] = get(0,0);
-	        tmp[1] = get(0,1);
-	        tmp[2] = get(0,2);
-
-	        tmp[3] = get(1,0);
-	        tmp[4] = get(1,1);
-	        tmp[5] = get(1,2);
-
-	        tmp[6] = get(2,0);
-	        tmp[7] = get(2,1);
-	        tmp[8] = get(2,2);
-	        // Calculate LU decomposition: Is the matrix singular?
-	        if (!luDecomposition(tmp, row_perm)) {
-	        	// Matrix has no inverse
-	        	System.out.println("***Matrix has no inverse "+this);
-	        	values = new double[9]; // scratch this matrix
-	        	return null;
-	        }
-	        // Perform back substitution on the identity matrix
-	        for(i=0;i<9;i++) result[i] = 0.0;
-	        result[0] = 1.0; result[4] = 1.0; result[8] = 1.0;
-	        luBacksubstitution(tmp, row_perm, result);
-	        out.set(0,0,result[0]);
-	        out.set(0,1,result[1]);
-	        out.set(0,2,result[2]);
-
-	        out.set(1,0,result[3]);
-	        out.set(1,1,result[4]);
-	        out.set(1,2,result[5]);
-
-	        out.set(2,0,result[6]);
-	        out.set(2,1,result[7]);
-	        out.set(2,2,result[8]);
-	        return out;
-	    }
-
-	    /**
-	     * Given a 3x3 array "matrix0", this function replaces it with the
-	     * LU decomposition of a row-wise permutation of itself.  The input
-	     * parameters are "matrix0" and "dimen".  The array "matrix0" is also
-	     * an output parameter.  The vector "row_perm[3]" is an output
-	     * parameter that contains the row permutations resulting from partial
-	     * pivoting.  The output parameter "even_row_xchg" is 1 when the
-	     * number of row exchanges is even, or -1 otherwise.  Assumes data
-	     * type is always double.
-	     *
-	     * This function is similar to luDecomposition, except that it
-	     * is tuned specifically for 3x3 matrices.
-	     *
-	     * Reference: Press, Flannery, Teukolsky, Vetterling,
-	     *	      _Numerical_Recipes_in_C_, Cambridge University Press,
-	     *	      1988, pp 40-45.
-	     *
-	     * @return true if the matrix is nonsingular, or false otherwise.
-	     */
-	    static boolean luDecomposition(double[] matrix0,
-					   int[] row_perm) {
-
-		double row_scale[] = new double[3];
-
-		// Determine implicit scaling information by looping over rows
-		{
-		    int i, j;
-		    int ptr, rs;
-		    double big, temp;
-
-		    ptr = 0;
-		    rs = 0;
-
-		    // For each row ...
-		    i = 3;
-		    while (i-- != 0) {
-			big = 0.0;
-
-			// For each column, find the largest element in the row
-			j = 3;
-			while (j-- != 0) {
-			    temp = matrix0[ptr++];
-			    temp = Math.abs(temp);
-			    if (temp > big) {
-				big = temp;
-			    }
-			}
-
-			// Is the matrix singular?
-			if (big == 0.0) {
-			    return false;
-			}
-			row_scale[rs++] = 1.0 / big;
-		    }
-		}
-
-		{
-		    int j;
-		    int mtx;
-
-		    mtx = 0;
-
-		    // For all columns, execute Crout's method
-		    for (j = 0; j < 3; j++) {
-			int i, imax, k;
-			int target, p1, p2;
-			double sum, big, temp;
-
-			// Determine elements of upper diagonal matrix U
-			for (i = 0; i < j; i++) {
-			    target = mtx + (3*i) + j;
-			    sum = matrix0[target];
-			    k = i;
-			    p1 = mtx + (3*i);
-			    p2 = mtx + j;
-			    while (k-- != 0) {
-				sum -= matrix0[p1] * matrix0[p2];
-				p1++;
-				p2 += 3;
-			    }
-			    matrix0[target] = sum;
-			}
-
-			// Search for largest pivot element and calculate
-			// intermediate elements of lower diagonal matrix L.
-			big = 0.0;
-			imax = -1;
-			for (i = j; i < 3; i++) {
-			    target = mtx + (3*i) + j;
-			    sum = matrix0[target];
-			    k = j;
-			    p1 = mtx + (3*i);
-			    p2 = mtx + j;
-			    while (k-- != 0) {
-				sum -= matrix0[p1] * matrix0[p2];
-				p1++;
-				p2 += 3;
-			    }
-			    matrix0[target] = sum;
-
-			    // Is this the best pivot so far?
-			    if ((temp = row_scale[i] * Math.abs(sum)) >= big) {
-				big = temp;
-				imax = i;
-			    }
-			}
-
-			if (imax < 0) {
-			    //throw new RuntimeException("imax negative");
-				return false;
-			}
-
-			// Is a row exchange necessary?
-			if (j != imax) {
-			    // Yes: exchange rows
-			    k = 3;
-			    p1 = mtx + (3*imax);
-			    p2 = mtx + (3*j);
-			    while (k-- != 0) {
-				temp = matrix0[p1];
-				matrix0[p1++] = matrix0[p2];
-				matrix0[p2++] = temp;
-			    }
-
-			    // Record change in scale factor
-			    row_scale[imax] = row_scale[j];
-			}
-
-			// Record row permutation
-			row_perm[j] = imax;
-
-			// Is the matrix singular
-			if (matrix0[(mtx + (3*j) + j)] == 0.0) {
-			    return false;
-			}
-
-			// Divide elements of lower diagonal matrix L by pivot
-			if (j != (3-1)) {
-			    temp = 1.0 / (matrix0[(mtx + (3*j) + j)]);
-			    target = mtx + (3*(j+1)) + j;
-			    i = 2 - j;
-			    while (i-- != 0) {
-				matrix0[target] *= temp;
-				target += 3;
-			    }
-			}
-		    }
-		}
-
-		return true;
-	    }
-
-	    /**
-	     * Solves a set of linear equations.  The input parameters "matrix1",
-	     * and "row_perm" come from luDecompostionD3x3 and do not change
-	     * here.  The parameter "matrix2" is a set of column vectors assembled
-	     * into a 3x3 matrix of floating-point values.  The procedure takes each
-	     * column of "matrix2" in turn and treats it as the right-hand side of the
-	     * matrix equation Ax = LUx = b.  The solution vector replaces the
-	     * original column of the matrix.
-	     *
-	     * If "matrix2" is the identity matrix, the procedure replaces its contents
-	     * with the inverse of the matrix from which "matrix1" was originally
-	     * derived.
-	     */
-	    //
-	    // Reference: Press, Flannery, Teukolsky, Vetterling,
-	    //	      _Numerical_Recipes_in_C_, Cambridge University Press,
-	    //	      1988, pp 44-45.
-	    //
-	    static void luBacksubstitution(double[] matrix1,
-					   int[] row_perm,
-					   double[] matrix2) {
-
-		int i, ii, ip, j, k;
-		int rp;
-		int cv, rv;
-
-		//	rp = row_perm;
-		rp = 0;
-
-		// For each column vector of matrix2 ...
-		for (k = 0; k < 3; k++) {
-		    //	    cv = &(matrix2[0][k]);
-		    cv = k;
-		    ii = -1;
-
-		    // Forward substitution
-		    for (i = 0; i < 3; i++) {
-			double sum;
-
-			ip = row_perm[rp+i];
-			sum = matrix2[cv+3*ip];
-			matrix2[cv+3*ip] = matrix2[cv+3*i];
-			if (ii >= 0) {
-			    //		    rv = &(matrix1[i][0]);
-			    rv = i*3;
-			    for (j = ii; j <= i-1; j++) {
-				sum -= matrix1[rv+j] * matrix2[cv+3*j];
-			    }
-			}
-			else if (sum != 0.0) {
-			    ii = i;
-			}
-			matrix2[cv+3*i] = sum;
-		    }
-
-		    // Backsubstitution
-		    //	    rv = &(matrix1[3][0]);
-		    rv = 2*3;
-		    matrix2[cv+3*2] /= matrix1[rv+2];
-
-		    rv -= 3;
-		    matrix2[cv+3*1] = (matrix2[cv+3*1] -
-				    matrix1[rv+2] * matrix2[cv+3*2]) / matrix1[rv+1];
-
-		    rv -= 3;
-		    matrix2[cv+4*0] = (matrix2[cv+3*0] -
-				    matrix1[rv+1] * matrix2[cv+3*1] -
-				    matrix1[rv+2] * matrix2[cv+3*2]) / matrix1[rv+0];
-
-		}
-	    }
+	  /**
+	  * This function calculates the inverse of the matrix A.
+	  * @return null if matrix is singular
+	  */
+	  public final Matrix3 invert()  {
+	   int N = 3; //Size of the to-be-inverted N x N square matrix 'A'.       
+	   // 'A' is the to-be-inverted matrix. should be a perfect identity matrix.      
+	   double[][] A = get();
+	  /* Its i-th row shows the position of '1' in the i-th row of the pivot that is used  
+	   * when performing the LUP decomposition of A. The rest of the elements in that row of  
+	   * the pivot would be zero. In this program, we call this array 'P' a 'permutation'. */  
+	   int[] P = new int[N+1];  	    
+	   double[][] B = new double[N+1][N+1];
+	   double[] X = new double[N+1];
+	   double[] Y = new double[N+1]; //Temporary spaces.          
+	  /* Performing LUP-decomposition of the matrix 'A'. If successful, the 'U' is stored in  
+	   * its upper diagonal, and the 'L' is stored in the remaining traigular space. Note that  
+	   * all the diagonal elements of 'L' are 1, which are not stored. P is the pivot array
+	   * the diagonal of the matrix belongs to U
+	   * */  
+	   if(LUPdecompose(N, A, P) < 0) 
+		   return null;      
+	  /* Inverting the matrix based on the LUP decomposed A. The inverse is returned through  
+	   * the matrix 'A' itself. */  
+	    if(LUPinverse(N, P, A, B, X, Y) < 0) 
+	    	return null;      
+	  /* Multiplying the inverse-of-A (stored in A) with A (stored in A1). The product is  
+	   * stored in 'I'. Ideally, 'I' should be a perfect identity matrix.  
+	   *for(i=1; i <= N; i++) for(j = 1; j <= N; j++)  
+	   * for(I[i][j] = 0, k = 1; k <= N; k++) I[i][j] += A[i][k]*A1[k][j];    
+	   *printf("\nProduct of the calculated inverse-of-A with A:\n");  
+	   *for(i = 1; i <= N; i++)   {  
+	   *  for(j = 1; j <= N; j++) printf("\t%E", (float)I[i][j]);  
+	   *  printf("\n");  
+	   *  }
+	   */
+	    return new Matrix3(A);
+	  }
+	  
+	  /**
+	   *        
+	   * This function decomposes the matrix 'A' into L, U, and P. If successful,  
+	   * the L and the U are stored in 'A', and information about the pivot in 'P'.  
+	   * The diagonal elements of 'L' are all 1, and therefore they are not stored. 
+	   */  
+	  private static int LUPdecompose(int size, double[][] A, int[] P)  {  
+	    int i, j, k, kd = 0, T;  
+	    double p, t;      
+	    // Finding the pivot of the LUP decomposition.
+	    for(i=1; i<size; i++) 
+	    	P[i] = i; //Initializing.   
+	    for(k=1; k<size-1; k++)  {  
+	      p = 0;  
+	      for(i=k; i<size; i++)  {  
+	        t = A[i][k];  
+	        if(t < 0) 
+	        	t *= -1; //Absolute value of 't'.  
+	        if(t > p) {  
+	           p = t;  
+	           kd = i;  
+	        }  
+	      }  
+	      // Matrix is singular
+	      if(p == 0)  { 	  
+	    	if(DEBUG )
+	    		System.out.println("Matrix3 LUPdecompose(): matrix is singular ");  
+	        return -1;  
+	      }      
+	     /* Exchanging the rows according to the pivot determined above. */  
+	      T = P[kd];  
+	      P[kd] = P[k];  
+	      P[k] = T;  
+	      for(i=1; i<size; i++) {  
+	         t = A[kd][i];  
+	         A[kd][i] = A[k][i];  
+	         A[k][i] = t;  
+	      }  
+	      for(i=k+1; i<size; i++){ //Performing subtraction to decompose A as LU.           
+	         A[i][k] = A[i][k]/A[k][k];  
+	         for(j=k+1; j<size; j++) 
+	        	 A[i][j] -= A[i][k]*A[k][j];  
+	      }  
+	    } // k loop, At end 'A' contains the L (without the diagonal elements, which are all 1) and the U.   
+	    return 0;  
+	  }  
 	    
+	  /**
+	   * This function calculates the inverse of the LUP decomposed matrix 'LU' and pivoting  
+	   * information stored in 'P'. The inverse is returned through the matrix 'LU' itself.  
+	   * 'B', X', and 'Y' are used as temporary spaces. 
+	   */  
+	  private static int LUPinverse(int size, int[] P, double[][] LU,double[][] B, double[] X, double[] Y) {  
+	    int i, j, n, m;  
+	    double t;    
+	    //Initializing X and Y.  
+	    for(n=1; n<size; n++) 
+	    	X[n] = Y[n] = 0;      
+	    //Solving LUX = Pe, in order to calculate the inverse of 'A'. Here, 'e' is a column  
+	    // vector of the identity matrix of size 'size-1'. Solving for all 'e'.   
+	    for(i=1; i<size; i++)  {  
+	     //Storing elements of the i-th column of the identity matrix in i-th row of 'B'.  
+	     for(j = 1; j<size; j++) 
+	    	B[i][j] = 0;  
+	     B[i][i] = 1;      
+	     //Solving Ly = Pb.  
+	     for(n=1; n<size; n++) {  
+	     	t = 0;  
+	     	for(m=1; m<=n-1; m++) 
+	     		t += LU[n][m]*Y[m];  
+	     	Y[n] = B[i][P[n]]-t;  
+	     }      
+	     //Solving Ux = y.  
+	     for(n=size-1; n>=1; n--) {  
+	    	t = 0;  
+	      	for(m = n+1; m < size; m++) 
+	    	  t += LU[n][m]*X[m];  
+	      	X[n] = (Y[n]-t)/LU[n][n];  
+	     }
+	     //Now, X contains the solution.
+	     for(j = 1; j<size; j++) 
+	    	 B[i][j] = X[j]; //Copying 'X' into the same row of 'B'.  
+	    } // i=1 i<isize
+	    //Now, 'B' the transpose of the inverse of 'A'.
+	    //Copying transpose of 'B' into 'LU', which would the inverse of 'A'.
+	    for(i=1; i<size; i++) 
+	    	for(j=1; j<size; j++) 
+	    		LU[i][j] = B[j][i];  
+	    return 0;  
+	  }
+	  
 		public void transposeInplace() {
 		     // transpose in-place
 	        for (int i = 0; i < 3; i++) {

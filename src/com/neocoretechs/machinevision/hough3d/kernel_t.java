@@ -118,14 +118,9 @@ public final class kernel_t {
     	  return;
       }
       constant_normal = root22pi32 * Math.sqrt(Math.abs(covariance_rpt_normal.determinant()));
-      //dlib::
 	  EigenvalueDecomposition eigenvalue_decomp = new EigenvalueDecomposition(covariance_rpt_normal);
-      //dlib::
 	  double[] eigenvalues_vector = eigenvalue_decomp.getRealEigenvalues();
-      //dlib::
 	  Matrix3 eigenvectors_matrix = eigenvalue_decomp.getV();
-      
- 
       // Sort eigenvalues
       int min_index = 0;
       if (eigenvalues_vector[min_index] > eigenvalues_vector[1])
