@@ -303,6 +303,7 @@ public class hough {
 	System.out.println("Number of planes detected = "+planes_out.size());
 	for(int i = 0; i < planes_out.size(); i++) {
 		System.out.println(i+"="+planes_out.get(i));
+		planes_out.get(i).draw();
 	}
 	writePlanes(planes_out);
   }

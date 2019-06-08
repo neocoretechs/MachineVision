@@ -34,7 +34,7 @@ import java.util.ArrayList;
 public final class kernel_t {
 	public static final double root22pi32 = 2.0*Math.sqrt(2.0)*Math.pow(Math.PI,1.5);
 	public static final double NONZERO = 0.00001;
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 
     octree_t node;
 

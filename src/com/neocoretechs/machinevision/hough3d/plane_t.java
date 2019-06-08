@@ -23,7 +23,7 @@ public class plane_t {
    Vector4d m_centroid;
    Vector4d m_normal;
    Vector4d m_desloc;
-   Vector4d m_scale;
+   private Vector4d m_scale;
    Vector4d m_color;
 
    ArrayList<Vector4d> m_points;
@@ -47,7 +47,7 @@ public class plane_t {
       m_cross = (c_u.multiply(m_normal)).Normalized();
       m_cross2 = m_normal.multiply(m_cross);
       m_centroid = new Vector4d(0,0,0);
-      m_scale = new Vector4d(0,0,0,0);
+      m_scale = new Vector4d(1,1,1,1);
       m_showing = true;
       m_rotate = 0.0;
       int cont = 0;
@@ -72,7 +72,38 @@ public class plane_t {
    public String toString() {
 	   return "plane_t theta="+m_theta+" phi="+m_phi+" rho="+m_rho+" normal="+m_normal+
 			   " centroid="+m_centroid+" position="+m_position+" votes="+votes+
-			   " representativeness="+representativeness+" octree nodes="+nodes.size();
+			   " representativeness="+representativeness+" octree nodes="+nodes.size()+" m_cross="+m_cross+" m_cross2="+m_cross2+
+			   " m_desloc="+m_desloc+" m_scale="+m_scale;
+   }
+   
+   public void draw() {
+	   double size = 1;
+      Vector4d cross = m_normal.multiply(m_cross);//Matrix4d.Rotation(m_rotate,m_normal) * m_cross;
+      Vector4d cross2 = m_normal.multiply(m_cross);//Matrix4d.Rotation(m_rotate,m_normal) * m_cross2;
+	  Vector4d vert1a = m_position.add(cross);//m_position + cross
+	  Vector4d vert1s = m_position.subtract(cross);//m_position - cross
+	  Vector4d vert1ca = cross2.add(size);//size + cross2
+	  Vector4d vert1cs = cross2.subtract(size);//size - cross2
+	  Vector4d vert1aa = m_desloc.add(size).add(cross); //size + m_desloc + cross
+	  Vector4d vertscx = cross2.add(m_scale.x);// m_scale.x + cross2
+	  Vector4d vertscy = cross2.add(m_scale.y);//m_scale.y + cross2
+	  Vector4d vert1 = vert1a.multiply(vert1ca);//m_position + cross * size + cross2
+	  Vector4d vert2 = vert1a.multiply(vert1cs);//m_position + cross * size - cross2
+	  Vector4d vert3 = vert1s.multiply(vert1cs);//m_position - cross * size - cross2
+	  Vector4d vert4 = vert1s.multiply(vert1ca);//m_position - cross * size + cross2 
+	  vert1 = vert1.multiply(vert1aa).multiply(vertscx).multiply(m_scale.z);
+	  vert2 = vert2.multiply(vert1aa).multiply(vertscx).multiply(m_scale.w);
+	  vert3 = vert3.multiply(vert1aa).multiply(vertscy).multiply(m_scale.w);
+	  vert4 = vert4.multiply(vert1aa).multiply(vertscy).multiply(m_scale.z);
+	  System.out.println(vert1);
+	  System.out.println(vert2);
+	  System.out.println(vert3);
+	  System.out.println(vert4);
+	  System.out.println();
+	  //glVertex3dv((m_position + cross * size + cross2 * size + m_desloc + cross * m_scale.x + cross2 * m_scale.z).data);
+      //glVertex3dv((m_position + cross * size - cross2 * size + m_desloc + cross * m_scale.x + cross2 * m_scale.w).data);
+      //glVertex3dv((m_position - cross * size - cross2 * size + m_desloc + cross * m_scale.y + cross2 * m_scale.w).data);
+      //glVertex3dv((m_position - cross * size + cross2 * size + m_desloc + cross * m_scale.y + cross2 * m_scale.z).data);
    }
 /*
    inline void draw(double size, bool type, bool pc, bool selected) 
