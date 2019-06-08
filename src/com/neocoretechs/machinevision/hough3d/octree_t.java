@@ -184,8 +184,9 @@ public final class octree_t {
   }
   /**
    * For each point in this node, Subtract the centroid from the passed point and take the vector4d scalar dot product of that
-   * and the normalized 'normal1' vector, then compare the absolute value of that to m_size/10. If its greater
-   * remove this point index.
+   * and the normalized 'normal1' vector, which happens in distance2plane, 
+   * then compare the absolute value of that to m_size/10. If its greater
+   * remove this point index. this presupposes we have called leaset_variance_direction and have done the PCA.
    */
    private void remove_outliers() {
     Vector4d centroid = new Vector4d();
@@ -220,155 +221,158 @@ public final class octree_t {
      double nvertsd = (double)(nverts);
      Matrix3 covariance = new Matrix3();
      covariance.set(0,0, 0.0);
- 	if( DEBUGVARIANCE) {
-		System.out.println("octree fast_covariance_matrix verticies="+nverts+" centroid="+m_centroid);
-		//for(int k = 0; k < nverts; k++) {
-		//	System.out.println("index="+k+": "+(m_root.m_points.get(m_indexes.get(k))));
-		//}
-	}
-   for (int k = 0; k < nverts; k++)
-     covariance.set(0,0, covariance.get(0,0) + 
+ 		if( DEBUGVARIANCE) {
+ 			System.out.println("octree fast_covariance_matrix verticies="+nverts+" centroid="+m_centroid);
+ 			//for(int k = 0; k < nverts; k++) {
+ 			//	System.out.println("index="+k+": "+(m_root.m_points.get(m_indexes.get(k))));
+ 			//}
+ 		}
+ 		for (int k = 0; k < nverts; k++)
+ 			covariance.set(0,0, covariance.get(0,0) + 
     		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)) * 
     		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)));
-   covariance.set(0,0, covariance.get(0, 0) / nvertsd);
-   if (Math.abs(m_covariance.get(0,0)) < EPS)
-      m_covariance.set(0,0,0.0);
-   covariance.set(1,1, 0.0);
-   for (int k = 0; k < nverts; k++)
-      covariance.set(1,1, covariance.get(1,1) + 
+ 		covariance.set(0,0, covariance.get(0, 0) / nvertsd);
+ 		if(Math.abs(m_covariance.get(0,0)) < EPS)
+ 			m_covariance.set(0,0,0.0);
+ 		covariance.set(1,1, 0.0);
+ 		for(int k = 0; k < nverts; k++)
+ 			covariance.set(1,1, covariance.get(1,1) + 
     	 		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)) * 
         		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)));
-   covariance.set(1,1, covariance.get(1,1) / nvertsd);
-   if (Math.abs(m_covariance.get(1,1)) < EPS)
-      m_covariance.set(1,1, 0.0);
-   covariance.set(2,2, 0.0);
-   for (int k = 0; k < nverts; k++)
-      covariance.set(2,2, covariance.get(2,2) +
+ 		covariance.set(1,1, covariance.get(1,1) / nvertsd);
+ 		if(Math.abs(m_covariance.get(1,1)) < EPS)
+ 			m_covariance.set(1,1, 0.0);
+ 		covariance.set(2,2, 0.0);
+ 		for(int k = 0; k < nverts; k++)
+ 			covariance.set(2,2, covariance.get(2,2) +
     	 		 (m_root.m_points.get(m_indexes.get(k)).get(2) - m_centroid.get(2)) * 
         		 (m_root.m_points.get(m_indexes.get(k)).get(2) - m_centroid.get(2)));
-   covariance.set(2,2, covariance.get(2,2) / nvertsd);
-   if (Math.abs(m_covariance.get(2,2)) < EPS)
-      m_covariance.set(2,2, 0.0);
-   covariance.set(1,0, 0.0);
-   for (int k = 0; k < nverts; k++)
-      covariance.set(1,0, covariance.get(1, 0) +
+ 		covariance.set(2,2, covariance.get(2,2) / nvertsd);
+ 		if(Math.abs(m_covariance.get(2,2)) < EPS)
+ 			m_covariance.set(2,2, 0.0);
+ 		covariance.set(1,0, 0.0);
+ 		for(int k = 0; k < nverts; k++)
+ 			covariance.set(1,0, covariance.get(1, 0) +
     	 		 (m_root.m_points.get(m_indexes.get(k)).get(1) - m_centroid.get(1)) * 
         		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)));
     		  //(m_root.m_points[m_indexes[k]][1] - m_centroid[1]) * (m_root.m_points[m_indexes[k]][0] - m_centroid[0]);
-   covariance.set(1,0, covariance.get(1,0) / nvertsd);
-   if (Math.abs(m_covariance.get(1,0)) < EPS)
-      m_covariance.set(1,0,0.0);
-   covariance.set(2,0,0.0);
-   for (int k = 0; k < nverts; k++)
-      covariance.set(2,0, covariance.get(2, 0) +
+ 		covariance.set(1,0, covariance.get(1,0) / nvertsd);
+ 		if(Math.abs(m_covariance.get(1,0)) < EPS)
+ 			m_covariance.set(1,0,0.0);
+ 		covariance.set(2,0,0.0);
+ 		for(int k = 0; k < nverts; k++)
+ 			covariance.set(2,0, covariance.get(2, 0) +
     	 		 (m_root.m_points.get(m_indexes.get(k)).get(2) - m_centroid.get(2)) * 
         		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)));
     		  //(m_root.m_points[m_indexes[k]][2] - m_centroid[2]) * (m_root.m_points[m_indexes[k]][0] - m_centroid[0]);
-   covariance.set(2,0, covariance.get(2,2) / nvertsd);
-   if (Math.abs(m_covariance.get(2,0)) < EPS)
-      m_covariance.set(2,0,0.0);
-   covariance.set(2,1,0.0);
-   for (int k = 0; k < nverts; k++)
-      covariance.set(2,1, covariance.get(2,1) +
+ 		covariance.set(2,0, covariance.get(2,2) / nvertsd);
+ 		if(Math.abs(m_covariance.get(2,0)) < EPS)
+ 			m_covariance.set(2,0,0.0);
+ 		covariance.set(2,1,0.0);
+ 		for(int k = 0; k < nverts; k++)
+ 			covariance.set(2,1, covariance.get(2,1) +
     	 		 (m_root.m_points.get(m_indexes.get(k)).get(2) - m_centroid.get(2)) * 
         		 (m_root.m_points.get(m_indexes.get(k)).get(1) - m_centroid.get(1)));
     		  //(m_root.m_points[m_indexes[k]][2] - m_centroid[2]) * (m_root.m_points[m_indexes[k]][1] - m_centroid[1]);
-   covariance.set(2,1, covariance.get(2, 1) / nvertsd);
-   if (Math.abs(m_covariance.get(2,1)) < EPS)
-      m_covariance.set(2,1,0.0);
-   covariance.set(0,2, covariance.get(2,0));
-   covariance.set(0,1, covariance.get(1,0));
-   covariance.set(1,2, covariance.get(2,1));
-   return covariance;
-  }
+ 		covariance.set(2,1, covariance.get(2, 1) / nvertsd);
+ 		if(Math.abs(m_covariance.get(2,1)) < EPS)
+ 			m_covariance.set(2,1,0.0);
+ 		covariance.set(0,2, covariance.get(2,0));
+ 		covariance.set(0,1, covariance.get(1,0));
+ 		covariance.set(1,2, covariance.get(2,1));
+ 		return covariance;
+   }
    /**
     * Principal component analysis.
     * Since the eigenvalues of the covariance matrix associated to the set of
 	* samples inside an octree node represent the proportions of the variances
 	* of the sample distribution inside that cell, they can be used to filter out
 	* clusters that could not represent planes.
+	* when it is all said and done we have set the values of variance1,variance2,and variance3 along with
+	* normal1, normal2, and normal3.
     */
-  private void least_variance_direction(){
+    private void least_variance_direction(){
 		if( DEBUGVARIANCE) {
 			System.out.println("octree least_variance_direction...computing covariance");
 		}
-   m_covariance = fast_covariance_matrix();
-	if( DEBUGVARIANCE ) {
+		m_covariance = fast_covariance_matrix();
+		if( DEBUGVARIANCE ) {
 		System.out.println("octree least_variance_direction...eigenvalue decomp:");//\r\n"+m_covariance);
-	}
-   EigenvalueDecomposition eigenvalue_decomp = new EigenvalueDecomposition(m_covariance);
-	if( DEBUGVARIANCE) {
-		System.out.println("octree least_variance_direction...get real eigenvectors");
-	}
-   double[] eigenvalues_vector = eigenvalue_decomp.getRealEigenvalues();
-	if( DEBUGVARIANCE) {
-		System.out.println("octree least_variance_direction...get eigenvalues");
-	} 
-   int min_index = 0, max_index = 0, middle_index = 0;
-   if (eigenvalues_vector[1] < eigenvalues_vector[min_index]) {
-      min_index = 1;
-   } else if (eigenvalues_vector[1] > eigenvalues_vector[max_index]) {
-      max_index = 1;
-   }
-   if (eigenvalues_vector[2] < eigenvalues_vector[min_index]) {
-      min_index = 2;
-   } else if (eigenvalues_vector[2] > eigenvalues_vector[max_index]) {
-      max_index = 2;
-   }
+		}
+		EigenvalueDecomposition eigenvalue_decomp = new EigenvalueDecomposition(m_covariance);
+		if( DEBUGVARIANCE) {
+			System.out.println("octree least_variance_direction...get real eigenvectors");
+		}
+		double[] eigenvalues_vector = eigenvalue_decomp.getRealEigenvalues();
+		if( DEBUGVARIANCE) {
+			System.out.println("octree least_variance_direction...get eigenvalues");
+		} 
+		int min_index = 0, max_index = 0, middle_index = 0;
+		if(eigenvalues_vector[1] < eigenvalues_vector[min_index]) {
+			min_index = 1;
+		} else 
+			if (eigenvalues_vector[1] > eigenvalues_vector[max_index]) {
+				max_index = 1;
+			}
+		if(eigenvalues_vector[2] < eigenvalues_vector[min_index]) {
+			min_index = 2;
+		} else
+			if (eigenvalues_vector[2] > eigenvalues_vector[max_index]) {
+				max_index = 2;
+			}
+		while (middle_index==min_index || middle_index==max_index)
+			middle_index++;
 
-   while (middle_index==min_index || middle_index==max_index) middle_index++;
+		variance1 = eigenvalues_vector[min_index];
+		variance2 = eigenvalues_vector[middle_index];
+		variance3 = eigenvalues_vector[max_index];
+		if( DEBUGVARIANCE) {
+			System.out.println("octree least_variance_direction...");//variance1="+variance1+" variance2="+variance2+" variance3="+variance3);
+		}
+		Matrix3 eigenvectors_matrix = eigenvalue_decomp.getV();
 
-   variance1 = eigenvalues_vector[min_index];
-   variance2 = eigenvalues_vector[middle_index];
-   variance3 = eigenvalues_vector[max_index];
-	if( DEBUGVARIANCE) {
-		System.out.println("octree least_variance_direction...");//variance1="+variance1+" variance2="+variance2+" variance3="+variance3);
-	}
-   Matrix3 eigenvectors_matrix = eigenvalue_decomp.getV();
-
-   normal1 = new Vector4d(eigenvectors_matrix.get(0, min_index),eigenvectors_matrix.get(1, min_index),eigenvectors_matrix.get(2, min_index));
-   normal2 = new Vector4d(eigenvectors_matrix.get(0, middle_index), eigenvectors_matrix.get(1, middle_index), eigenvectors_matrix.get(2, middle_index));
-   normal3 = new Vector4d(eigenvectors_matrix.get(0, max_index), eigenvectors_matrix.get(1, max_index), eigenvectors_matrix.get(2, max_index));
-	if( DEBUGVARIANCE) {
-		System.out.println("octree least_variance_direction...");//eigenvector normal1="+normal1+" normal2="+normal2+" normal3="+normal3);
-	}
-  }
-  /**
-   * Subtract the centroid from the passed point and take the vector4d scalar dot product of that
-   * and the normalized 'normal1' vector.
-   * then return the absolute value of that.
-   * @param point
-   * @return
-   */
-  double distance2plane( Vector4d point ){
-   return Math.abs(point.subtract(m_centroid).and(normal1.Normalized()));
-  }
-  /**
-   * If child nodes are not present, add 'this' to the passed node array if this node is marked 'coplanar=true'
-   * otherwise recursively perform the operation 
-   * @param nodes
-   */
-  protected void get_nodes( ArrayList<octree_t> nodes ) {
-   if (m_children != null) {
-      for (short i = 0; i < 8 ; i++) {
-         m_children[i].get_nodes(nodes);
-      }
-   } else {
-      if (coplanar) {
-         nodes.add(this);
-      }
-   }
-   
-  }
+		normal1 = new Vector4d(eigenvectors_matrix.get(0, min_index),eigenvectors_matrix.get(1, min_index),eigenvectors_matrix.get(2, min_index));
+		normal2 = new Vector4d(eigenvectors_matrix.get(0, middle_index), eigenvectors_matrix.get(1, middle_index), eigenvectors_matrix.get(2, middle_index));
+		normal3 = new Vector4d(eigenvectors_matrix.get(0, max_index), eigenvectors_matrix.get(1, max_index), eigenvectors_matrix.get(2, max_index));
+		if( DEBUGVARIANCE) {
+			System.out.println("octree least_variance_direction...");//eigenvector normal1="+normal1+" normal2="+normal2+" normal3="+normal3);
+		}
+    }
+    /**
+     * Subtract the centroid from the passed point and take the vector4d scalar dot product of that
+     * and the normalized 'normal1' vector.
+     * then return the absolute value of that.
+     * @param point
+     * @return
+     */
+    double distance2plane( Vector4d point ){
+    	return Math.abs(point.subtract(m_centroid).and(normal1.Normalized()));
+    }
+    /**
+     * If child nodes are not present, add 'this' to the passed node array if this node is marked 'coplanar=true'
+     * otherwise recursively perform the operation 
+     * @param nodes
+     */
+    protected void get_nodes( ArrayList<octree_t> nodes ) {
+    	if (m_children != null) {
+    		for (short i = 0; i < 8 ; i++) {
+    			m_children[i].get_nodes(nodes);
+    		}
+    	} else {
+    		if (coplanar) {
+    			nodes.add(this);
+    		}
+    	}
+    }
   
-  @Override
-  public String toString() {
+  	@Override
+  	public String toString() {
 	   return "octree_t centroid="+m_centroid+" level="+m_level+" size="+m_size+" points="+m_indexes.size()+" coplanar="+coplanar+" votes="+votes+" representativeness="+representativeness;
-  }
-  //@Override 
-  //public boolean equals(Object onode) {
-  //   return ((octree_t)onode).octoNum == octoNum;
-  //}
+  	}
+  	//@Override 
+  	//public boolean equals(Object onode) {
+  	//   return ((octree_t)onode).octoNum == octoNum;
+  	//}
 /*
 void octree_t::print_points()
 {

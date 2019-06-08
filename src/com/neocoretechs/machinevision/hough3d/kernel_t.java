@@ -34,7 +34,7 @@ import java.util.ArrayList;
 public final class kernel_t {
 	public static final double root22pi32 = 2.0*Math.sqrt(2.0)*Math.pow(Math.PI,1.5);
 	public static final double NONZERO = 0.00001;
-	private static final boolean DEBUG = false;
+	private static final boolean DEBUG = true;
 
     octree_t node;
 
@@ -112,7 +112,7 @@ public final class kernel_t {
       covariance_rpt_inv_normal = covariance_rpt_normal.invert();
       if( covariance_rpt_inv_normal == null ) {
     	  if( DEBUG ) {
-    		  System.out.println("kernel_t kernel_load_parameters covariance matrix is singular");
+    		  System.out.println("kernel_t kernel_load_parameters covariance matrix is singular for "+this);
     	  }
     	  voting_limit = 0;
     	  return;
@@ -171,9 +171,9 @@ public final class kernel_t {
 	  //displacement.z = theta
 	  //dlib::vector<double,3> displacement(rho,phi,theta);
       if( covariance_rpt_inv_normal == null ) {
-    	  if( DEBUG ) {
-    		  System.out.println("kernel_t trivariated_gaussian_dist_normal covariance matrix is singular");
-    	  }
+    	  //if( DEBUG ) {
+    		//  System.out.println("kernel_t trivariated_gaussian_dist_normal covariance matrix is singular for "+this);
+    	  //}
     	  return 0;
       }
       //return (std::exp(-0.5 * (dlib::trans(displacement) * covariance_rpt_inv_normal * displacement))/constant_normal);
@@ -203,5 +203,19 @@ public final class kernel_t {
            sum += preMultiplied[i] * values[i];//centered[i];
        }
        return Math.exp(-0.5 * sum);
+   }
+   
+   @Override
+   public String toString() {
+	   return "kernel_t node="+node+
+			   " theta="+theta+" phi="+phi+" rho="+rho+
+			   " constant_normal="+constant_normal+" voting limit="+voting_limit+
+			   " node.normal1="+(node != null ? node.normal1 : "null")+
+			   " node.m_size="+(node != null ? node.m_size : "null")+
+			   " node points="+(node != null ? node.m_indexes.size() : "null")+
+			   " thetaPhiRhoIndex[0]="+thetaPhiRhoIndex[0]+
+			   " thetaPhiRhoIndex[1]="+thetaPhiRhoIndex[1]+
+			   " thetaPhiRhoIndex[2]="+thetaPhiRhoIndex[2]+
+			   "\r\ncovariance:\r\n"+covariance_rpt_normal;
    }
 }
