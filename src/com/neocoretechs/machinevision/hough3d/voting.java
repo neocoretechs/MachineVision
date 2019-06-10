@@ -30,7 +30,7 @@ public final class voting {
 	      gaussian_vote_3d(used_kernels.get(i), accumulator, used_bins); 
 	}
 	/**
-	 * Cast a vote, this is where elements are finally added to used_bins upon first vote
+	 * Cast a vote, this is where bin_t elements are finally added to used_bins upon first vote
 	 * indicated by cell.verify_cell(kernel.node);
 	 * 
 	 * Update the majority of elements in 'cell' including bin, last_cast_vote, voted, bin
@@ -182,10 +182,6 @@ public final class voting {
 				accum.initialize(curr_theta_index, (int) theta_phi_index[1]/*phi_index*/);
 				double[] currThetaPhi = new double[]{curr_theta_index, theta_phi_index[1], theta_phi_index[2]};
 				voted = gaussian_vote_1d(accum, kernel, used_bins, currThetaPhi/*curr_theta_index,(int)phi_index,(int)rho_index*/, theta, phi);
-				// update current index array
-				curr_theta_index = currThetaPhi[0];
-				theta_phi_index[1] = currThetaPhi[1];
-				theta_phi_index[2] = currThetaPhi[2];
 				if (voted) {
 					voting_ended = false;
 				} else 
@@ -197,10 +193,6 @@ public final class voting {
 				accum.initialize(curr_theta_index, (int) theta_phi_index[1]/* phi_index*/);
 				double[] currThetaPhi = new double[]{curr_theta_index, theta_phi_index[1], theta_phi_index[2]};
 				voted = gaussian_vote_1d(accum, kernel, used_bins, currThetaPhi/*curr_theta_index, (int)phi_index, (int) rho_index*/, theta, phi);
-				// update current index array
-				curr_theta_index = currThetaPhi[0];
-				theta_phi_index[1] = currThetaPhi[1];
-				theta_phi_index[2] = currThetaPhi[2];
 				if (voted) {
 					voting_ended = false;
 				} else 
@@ -216,17 +208,15 @@ public final class voting {
 	 * @param used_bins
 	 */
 	private static void gaussian_vote_3d(kernel_t kernel, accumulatorball_t accum, ArrayList<bin_t> used_bins){
-		if(kernel.thetaPhiRhoIndex[2] < 0)
-			return;
+		//if(kernel.thetaPhiRhoIndex[2] < 0)
+		//	return;
 		accum.at(kernel.thetaPhiRhoIndex[0]/*theta_index*/, (short)kernel.thetaPhiRhoIndex[1]/*phi_index*/,(short)kernel.thetaPhiRhoIndex[2]/*rho_index*/).top = true;
 		gaussian_vote_2d(accum, kernel, used_bins, kernel.thetaPhiRhoIndex/* kernel.theta_index, kernel.phi_index, kernel.rho_index*/, 0, +1);
 		//int phi_index = kernel.phi_index-1;
 		//double theta_index = kernel.theta_index;
 		double[] theta_phi_index = new double[]{kernel.thetaPhiRhoIndex[0], kernel.thetaPhiRhoIndex[1]-1, kernel.thetaPhiRhoIndex[2]};
 		accum.process_phi(theta_phi_index/*theta_index, phi_index*/);
-		gaussian_vote_2d(accum, kernel, used_bins, theta_phi_index/*theta_phi_index[0] theta_index,(int)theta_phi_index[1] phi_index, kernel.rho_index*/, -accum.m_delta_angle, -1);
-		// may have modified the rho value and update needed in kernel
-		kernel.thetaPhiRhoIndex[2]=theta_phi_index[2];
+		gaussian_vote_2d(accum, kernel, used_bins, theta_phi_index, -accum.m_delta_angle, -1);
 	}
 
 	/**
@@ -243,13 +233,13 @@ public final class voting {
 		kernel_t kernel = new kernel_t();
 		kernel.node = node;   
 		if ((node.m_centroid.Normalized().and(node.normal1)) < 0)  
-			node.normal1.multiply(-1.0);
+			node.normal1 = node.normal1.multiply(-1.0);
 		kernel.phi = Math.acos(node.normal1.z);
 		kernel.theta = Math.atan2(node.normal1.y, node.normal1.x);
 		kernel.rho = node.m_centroid.x * node.normal1.x + node.m_centroid.y * node.normal1.y + node.m_centroid.z * node.normal1.z;
 		accum.process_limits(kernel.thetaPhiRhoIndex/*kernel.theta_index, kernel.phi_index, kernel.rho_index*/);
 		// fill kernel.theta_index, kernel.phi_index, kernel.rho_index from the calculated values of kernel theta, phi, rho
-		accum.get_index(kernel/*kernel.theta, kernel.phi, kernel.rho */);
+		accum.get_index(kernel.theta, kernel.phi, kernel.rho, kernel);
 		// get_index forms thetaPhiRhoIndex in kernel
 		kernel.thetaPhiRhoIndex[0]/*theta_index*/ = accum.fix_theta(kernel.thetaPhiRhoIndex[0]/*theta_index*/,(int) kernel.thetaPhiRhoIndex[1]/*phi_index*/);
 		kernel.kernel_load_parameters(max_point_distance);

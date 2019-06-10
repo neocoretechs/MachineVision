@@ -27,8 +27,8 @@ public final class peak_detection {
 	  // may add to m_data?
       accum_cell_t cell = accum.at(bin.theta_index, bin.phi_index, bin.rho_index);
       bin.votes = accum.convolution_value( bin.theta_index, bin.phi_index, bin.rho_index);
-      //if( DEBUG )
-    	//  System.out.println("peak_detection detect bin="+bin);
+      if( DEBUG )
+    	  System.out.println("peak_detection detect bin="+bin);
    }
    // Sort the Auxiliary Array (AA - Convoluted Voted Cells) in descending order 
    //std::stable_sort
@@ -56,7 +56,9 @@ public final class peak_detection {
         		 System.out.println("peak_detection detect no nodes returned from convolution_nodes, so plane not added");
         	 } 	 
          }
-      }
+      } else
+    	  if( DEBUG )
+    		  System.out.println("peak_detection detect neighbor already visited for bin indexes bin="+bin);
       accum.set_visited( bin.theta_index, bin.phi_index, bin.rho_index );
    }
   }

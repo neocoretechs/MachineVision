@@ -90,14 +90,14 @@ public final class octree_t {
     */
   void subdivide( hough_settings settings ) {
 		if(DEBUGSUBDIVIDE ) {
-			System.out.println("octree subdivide...level="+m_level+" indicies="+m_indexes.size()+" centoid="+m_centroid);
+			System.out.println("octree_t subdivide...level="+m_level+" indicies="+m_indexes.size()+" centoid="+m_centroid);
 		}
    // s_ms verification, obviously the value needs to be > 0 and low values seem to want to blow the stack
 	if (m_indexes.size() < (int)settings.s_ms) 
 	    return;
    // s_level verification
 	if(DEBUGSUBDIVIDE) {
-		System.out.println("octree subdivide s_level verification in octree..."+(m_level >=settings.s_level)+", "+m_level+" "+settings.s_level);
+		System.out.println("octree_t subdivide s_level verification in octree..."+(m_level >=settings.s_level)+", "+m_level+" "+settings.s_level);
 	}
    if (m_level >= settings.s_level) {
       // principal component analysis
@@ -106,7 +106,7 @@ public final class octree_t {
       double thickness = variance1 / variance2;
       double isotropy  = variance2 / variance3;
       if( DEBUG )
-    	  System.out.println("thickness and isotropy="+thickness+" "+isotropy);
+    	  System.out.println("octree_t subdivide thickness and isotropy="+thickness+" "+isotropy);
       if (thickness < settings.max_thickness && isotropy > settings.min_isotropy) {
          // Refitting step
          remove_outliers();

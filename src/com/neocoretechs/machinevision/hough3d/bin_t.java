@@ -10,10 +10,17 @@ public class bin_t implements Comparable{
   short rho_index;
   float votes;
    //public bin_t(){}
+  /**
+   * 
+   * @param theta Theta Index
+   * @param phi Phi Index
+   * @param rho Rho Index
+   */
    public bin_t(double theta, short phi, short rho) {
 	   this.theta_index = theta;
 	   this.phi_index = phi;
 	   this.rho_index = rho;
+	   votes = 0;
    }
   // bool const operator < (const bin_t bin) const { return (votes > bin.votes); }
    @Override

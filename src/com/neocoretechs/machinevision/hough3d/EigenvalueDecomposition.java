@@ -16,7 +16,9 @@ public class EigenvalueDecomposition {
 	    conditioned, or even singular, so the validity of the equation
 	    A = V*D*inverse(V) depends upon V.cond().
 	**/
-
+    	//public static final double eps = Math.pow(2.0,-52.0);
+       public static final double eps  =   2.2204460492503131e-016; /* smallest such that 1.0+DBL_EPSILON != 1.0 */
+       
 	   /** Row and column dimension (square matrix).
 	   @serial matrix dimension.
 	   */
@@ -180,7 +182,6 @@ public class EigenvalueDecomposition {
 	   
 	      double f = 0.0;
 	      double tst1 = 0.0;
-	      double eps = Math.pow(2.0,-52.0);
 	      for (int l = 0; l < n; l++) {
 
 	         // Find small subdiagonal element
@@ -193,7 +194,8 @@ public class EigenvalueDecomposition {
 	            }
 	            m++;
 	         }
-	   
+	         if (m == n)
+	               --m;
 	         // If m == l, d[l] is an eigenvalue,
 	         // otherwise, iterate.
 	   
@@ -262,6 +264,16 @@ public class EigenvalueDecomposition {
 	      }
 	     
 	      // Sort eigenvalues and corresponding vectors.
+	      /*
+          The code to sort the eigenvalues and eigenvectors 
+          has been removed from here since, in the non-symmetric case,
+          we can't sort the eigenvalues in a meaningful way.  If we left this
+          code in here then the user might supply what they thought was a symmetric
+          matrix but was actually slightly non-symmetric due to rounding error
+          and then they would end up in the non-symmetric eigenvalue solver
+          where the eigenvalues don't end up getting sorted.  So to avoid
+          any possible user confusion I'm just removing this.
+         
 	   
 	      for (int i = 0; i < n-1; i++) {
 	         int k = i;
@@ -281,7 +293,7 @@ public class EigenvalueDecomposition {
 	               V[j][k] = p;
 	            }
 	         }
-	      }
+	      }*/
 	   }
 
 	   // Nonsymmetric reduction to Hessenberg form.
@@ -412,7 +424,7 @@ public class EigenvalueDecomposition {
 	      int n = nn-1;
 	      int low = 0;
 	      int high = nn-1;
-	      double eps = Math.pow(2.0,-52.0);
+	
 	      double exshift = 0.0;
 	      double p=0,q=0,r=0,s=0,z=0,t,w,x,y;
 	   
@@ -420,7 +432,7 @@ public class EigenvalueDecomposition {
 	   
 	      double norm = 0.0;
 	      for (int i = 0; i < nn; i++) {
-	         if (i < low | i > high) {
+	         if (i < low || i > high) {
 	            d[i] = H[i][i];
 	            e[i] = 0.0;
 	         }
@@ -785,7 +797,7 @@ public class EigenvalueDecomposition {
 	                     y = H[i+1][i];
 	                     vr = (d[i] - p) * (d[i] - p) + e[i] * e[i] - q * q;
 	                     vi = (d[i] - p) * 2.0 * q;
-	                     if (vr == 0.0 & vi == 0.0) {
+	                     if (vr == 0.0 && vi == 0.0) {
 	                        vr = eps * norm * (Math.abs(w) + Math.abs(q) +
 	                        Math.abs(x) + Math.abs(y) + Math.abs(z));
 	                     }
@@ -819,7 +831,7 @@ public class EigenvalueDecomposition {
 	      // Vectors of isolated roots
 	   
 	      for (int i = 0; i < nn; i++) {
-	         if (i < low | i > high) {
+	         if (i < low || i > high) {
 	            for (int j = i; j < nn; j++) {
 	               V[i][j] = H[i][j];
 	            }
@@ -852,8 +864,8 @@ public class EigenvalueDecomposition {
 	      e = new double[n];
 
 	      issymmetric = true;
-	      for (int j = 0; (j < n) & issymmetric; j++) {
-	         for (int i = 0; (i < n) & issymmetric; i++) {
+	      for (int j = 0; (j < n) && issymmetric; j++) {
+	         for (int i = 0; (i < n) && issymmetric; i++) {
 	            issymmetric = (A[i][j] == A[j][i]);
 	         }
 	      }

@@ -221,7 +221,7 @@ public class accumulatorball_t {
 	   return (theta_index+1.0) - (int)(theta_index+1.0);
    }
    /**
-    * 
+    * Modify indexes for theta and phi
     * @param theta_phi_index
     * @return
     */
@@ -231,16 +231,16 @@ public class accumulatorball_t {
          theta_phi_index[1] = Math.abs(theta_phi_index[1]);
          /*theta_index*/ theta_phi_index[0] = (theta_phi_index[0]+0.5) - (int)((theta_phi_index[0]+0.5));
          return true;
-      }
-      else if (/*phi_index*/ theta_phi_index[1] > m_phi_length) {
-         theta_phi_index[1] = m_phi_length + m_phi_length - theta_phi_index[1];
-         /*theta_index*/ theta_phi_index[0] = (theta_phi_index[0]+0.5) - (int)((theta_phi_index[0]+0.5));
-         return true;
-      }
+      } else 
+    	  if (/*phi_index*/ theta_phi_index[1] > m_phi_length) {
+    		  theta_phi_index[1] = m_phi_length + m_phi_length - theta_phi_index[1];
+    		  /*theta_index*/ theta_phi_index[0] = (theta_phi_index[0]+0.5) - (int)((theta_phi_index[0]+0.5));
+    		  return true;
+    	  }
       return false;
    }
    /**
-    * 
+    * Modify indexes for theta, phi, and rho
     * @param theta_phi_index
     * @return
     */
@@ -257,6 +257,15 @@ public class accumulatorball_t {
       return true;
    }
    /**
+    * Called from voting, calls process_phi and process_rho
+    * @param theta_phi_index
+    * @return
+    */
+   boolean process_limits(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
+      process_phi(theta_phi_index /*theta_index, phi_index*/);
+      return process_rho(theta_phi_index);
+   }
+   /**
     * Build a unique collection of neighbors
     * @param theta_index
     * @param phi_index
@@ -267,7 +276,8 @@ public class accumulatorball_t {
    private ArrayList<accum_cell_t> get_neighbors( double theta_index, short phi_index, short rho_index, int neighborhood_size ){
       ArrayList<accum_cell_t> result = new ArrayList<accum_cell_t>(neighborhood_size);
       //int p, r;
-      double t, theta;
+      //double t;
+      double theta;
 
       if (phi_index==0 || phi_index==m_phi_length) 
 		theta = 0.5;
@@ -276,7 +286,7 @@ public class accumulatorball_t {
       // we are going to be changing the references in theta_phi_index inside the 'process_' methods
       double[] theta_phi_index = new double[3];
       //  center[1]   /  direct-linked[7]  semi-direct-linked[19] diagonal-linked[27] 
-      for (short i=0; i < neighborhood_size; ++i){
+      for (short i=0; i != neighborhood_size; ++i){
          //t = theta;
          //p = phi_index + offset_y[i];
          //r = rho_index + offset_z[i];
@@ -299,15 +309,7 @@ public class accumulatorball_t {
       } 
       return result;
    }
-   /**
-    * Called from voting
-    * @param theta_phi_index
-    * @return
-    */
-   boolean process_limits(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
-      process_phi(theta_phi_index /*theta_index, phi_index*/);
-      return process_rho(theta_phi_index);
-   }
+
    /**
     * if phi is null, put new entry at phi,get_theta_index(theta,phi) in m_data after we get_theta_index of theta,phi.
     * Otherwise just return bins at rho.
@@ -361,21 +363,27 @@ public class accumulatorball_t {
    }
 	/**
 	* Call with size of m_data for phi index, multiply theta by size of phi index and round
+	* called from at and initialize
 	*/
-   private int get_theta_index(double theta, int phiSize) {
-	   return phiSize == 0 ? 0 : ((int)(Math.round(theta * (double)(phiSize))) % phiSize);
+   private int get_theta_index(double theta, int phi) {
+	   //return static_cast<int>(round(theta * (double)(m_data[phi_index].size()))) % m_data[phi_index].size();
+	   int phix = m_data.get(phi).size();
+	   if( DEBUGAT || DEBUGINITIALIZE) {
+		   System.out.println("accumulatorball_t get_theta_index size of m_data at phi="+phi+" is "+phix);
+	   }
+	   return phix == 0 ? 0 : ((int)(Math.round(theta * (double)phix))) % phix;
    }
    /**
-    * Form the kernel index thetaPhiRhoIndexfrom the values of theta, phi , rho in the kernel
+    * Form the kernel index thetaPhiRhoIndexfrom the values of theta, phi , rho 
     * @param kernel
     */
-   void get_index(kernel_t kernel) {
+   void get_index(double theta, double phi, double rho, kernel_t kernel) {
       //kernel.theta_index = kernel.theta/Math.PI*2 + 0.5;
       //kernel.phi_index = (int) Math.round(kernel.phi / m_delta_angle);
       //kernel.rho_index =  (int) Math.round(kernel.rho / m_delta_rho);
-      kernel.thetaPhiRhoIndex[0] = kernel.theta/Math.PI*2 + 0.5;
+      kernel.thetaPhiRhoIndex[0] = kernel.theta/(Math.PI*2) + 0.5;
       kernel.thetaPhiRhoIndex[1] = (int) Math.round(kernel.phi / m_delta_angle);
-      kernel.thetaPhiRhoIndex[2] =  (int) Math.round(kernel.rho / m_delta_rho);
+      kernel.thetaPhiRhoIndex[2] = (int) Math.round(kernel.rho / m_delta_rho);
    }
    /**
     * 
@@ -385,7 +393,7 @@ public class accumulatorball_t {
     * @param rho_index
     */
    void get_values(plane_t plane, double theta_index, int phi_index, int rho_index) {
-      plane.m_theta = (theta_index-0.5) * Math.PI*2;
+      plane.m_theta = (theta_index-0.5) * (Math.PI*2);
       plane.m_phi =   (double)(phi_index) * m_delta_angle;
       plane.m_rho =   (double)(rho_index) * m_delta_rho;
    }

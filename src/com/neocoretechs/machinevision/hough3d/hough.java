@@ -65,6 +65,7 @@ public class hough {
 	}
    // Voting Procedures
    ArrayList<bin_t> used_bins = new ArrayList<bin_t>();
+   // used bins filled during voting
    voting.vote(father, accum, used_bins, settings.max_point_distance);
 	if( DEBUG) {
 		System.out.println("Elapsed voting took "+(System.currentTimeMillis()-startTime)+" ms.");
