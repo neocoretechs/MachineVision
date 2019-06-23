@@ -31,7 +31,7 @@ public class reader_file {
    * for each point - X,Y,Z,R,G,B ascii delimited by space
    * the processed array chunks of [x][y][0]=R, [x][y][1]=G, [x][y][2]=B, [x][y][3]=D
    */
-  void read_file(hough_settings settings, octree_t node) {
+  private boolean read_file(hough_settings settings, octree_t node) {
    BufferedReader dis = null;
    int point_num = 0;
    //file.open(settings.file + settings.extension);
@@ -41,7 +41,9 @@ public class reader_file {
 	   if(!f.exists()) {
 		   if( fileName != null )
 			   f = new File(fileName);
-		   throw new RuntimeException("Cant find any permutation of file:"+f);
+		   //throw new RuntimeException
+		   System.out.println("Cant find any permutation of file:"+f);
+		   return false;
 	   }
    }
    System.out.println(f.getPath()+" isfile?="+f.isFile());
@@ -53,7 +55,7 @@ public class reader_file {
 			Vector4d point = new Vector4d(Double.parseDouble(splitLine[0]),Double.parseDouble(splitLine[1]),Double.parseDouble(splitLine[2]));
 			Vector4d color = new Vector4d(Double.parseDouble(splitLine[3]),Double.parseDouble(splitLine[4]),Double.parseDouble(splitLine[5]));
 			node.m_points.add(point);
-			node.m_centroid.add(point);
+			node.m_centroid = node.m_centroid.add(point); // set up to average all points on all axis
 			node.m_indexes.add(point_num++);
 			node.m_colors.add(color.divide(255.0));
 			mix = Math.min(mix,point.x);
@@ -67,9 +69,10 @@ public class reader_file {
 		}
 	} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			return;
+			return false;
 	} catch (IOException e) {
 			e.printStackTrace();
+			return false;
 	} finally {
 		try {
 				if( dis != null ) {
@@ -77,19 +80,25 @@ public class reader_file {
 				}
 		} catch (IOException e) {}		
 	}
+   node.m_centroid = node.m_centroid.divide(point_num);
+   node.m_middle.x = (mix+((max-mix)/2));
+   node.m_middle.y = (miy+((may-miy)/2));
+   node.m_middle.z = (miz+((maz-miz)/2));
+   return true;
   }
  /**
   * Create root node and read file.
   * @param settings
   * @param node
   */
-  void load_point_cloud(hough_settings settings, octree_t node) {
+  public boolean load_point_cloud(hough_settings settings, octree_t node) {
    System.out.print("Loading Point Cloud...");
    node.m_middle.set(new Vector4d(0,0,0));
    node.m_level = 0;
    node.m_root = node;
-   read_file(settings, node); 
+   boolean rf = read_file(settings, node); 
    System.out.println("Size: "+node.m_points.size()+" min="+mix+","+miy+","+miz+" max="+max+","+may+","+maz);
    //settings.s_ms = settings.s_ps * node.m_points.size();
+   return rf;
   }
 }

@@ -12,7 +12,7 @@ import java.util.ArrayList;
 * Using the following plane detection formula in the (theta, phi, rho) Hough Space:
 * rho = (x * cos(theta) * sin(phi)) + (y * sin(phi) * sin(theta)) + (z * cos(phi))
 * where x, y and z are the Cartesian coordinates of the samples, theta from 0 to 360
-* and phi from 0 to 180 are the polar coordinates of the plane's normal vector, and
+* and phi from 0 to 180 are the polar coordinates of the plane's normal vector,
 * and rho is element of real >= 0 and is the distance from the plane to the origin of the coordinate system. 
 * Using this, the equation of the plane Pi can be rewritten using spherical coordinates as:
 * rho = -D = ux* nx + uy*ny + uz * nz = sqrt(px**2 + py**2 + pz**2)
@@ -33,7 +33,7 @@ import java.util.ArrayList;
 */
 public final class kernel_t {
 	public static final double root22pi32 = 2.0*Math.sqrt(2.0)*Math.pow(Math.PI,1.5);
-	public static final double NONZERO = 0.00001;
+	public static final double NONZERO = 0.001;//paper says .001 but code had as .00001
 	private static final boolean DEBUG = true;
 
     octree_t node;
@@ -53,12 +53,14 @@ public final class kernel_t {
 
     //int votes;
 
-    private Matrix3 covariance_rpt_normal;
-    private Matrix3 covariance_rpt_inv_normal;
+    private Matrix3 covariance_rpt_normal = null;
+    private Matrix3 covariance_rpt_inv_normal = null;
     /**
      * Called from voting kernel_calculation. Calculates voting_limit from trivariate gaussian distance normal.
      * Uses covariance matrix multiplied by jacobian normal multiplied by transposed normal jacobian matrix to produce
      * normal covariance matrix to generate the uncertainty propagation.
+     * First order uncertainty propagation analysis above generates variances and covariances in theta,phi,rho space 
+     * from euclidian space.
      * Element 0,0 of matrix has a fractional non-zero value added, then the matrix is inverted.
      * The square root of the absolute value of the determinant is
      * multiplied by 2.0*Math.sqrt(2.0)*Math.pow(Math.PI,1.5) to produce a scalar constant normal product.
@@ -80,9 +82,9 @@ public final class kernel_t {
       Vector4d n = node.normal1.Normalized();
       // Jacobian Matrix calculation
       //double t=1.0;
-      double EPS2 = 0.00001;
+      double EPS2 = 0.00001; //epsilon?
       Vector4d p = n.multiply(rho);
-      double w = p.x * p.x + p.y * p.y;
+      double w = (p.x * p.x) + (p.y * p.y);
       double p2 = w + (p.z * p.z);
       double sqrtW = Math.sqrt(w);
       jacobian_normal.set(0,0, n.x);
@@ -104,10 +106,24 @@ public final class kernel_t {
 
       // Uncertainty propagation
 	  Matrix3 jacobian_transposed_normal = Matrix3.transpose(jacobian_normal);
+	  // calculate covariance matrix
+	  // First order uncertainty propagation analysis generates variances and covariances in theta,phi,rho space 
+	  // from euclidian space.
       covariance_rpt_normal = jacobian_normal.multiply(covariance_xyz).multiply(jacobian_transposed_normal);
    
       // Cluster representativeness
       covariance_rpt_normal.set(0,0, covariance_rpt_normal.get(0,0)+NONZERO);
+      constant_normal = root22pi32 * Math.sqrt(Math.abs(covariance_rpt_normal.determinant()));
+      // if matrix is singular determinant is zero and constant_normal is 0
+      // Supposedly adding epsilon averts this according to paper and in normal circumstances
+      // a singular matrix would mean coplanar samples and voting should be done with bivariate kernel over theta,phi
+      if( constant_normal == 0 ) {
+    	  if( DEBUG ) {
+    		  System.out.println("kernel_t kernel_load_parameters determinant is 0 for "+this);
+    	  }
+    	  voting_limit = 0;
+    	  return;
+      }
       // if invert comes back null then the matrix is singular, which means the samples are coplanar
       covariance_rpt_inv_normal = covariance_rpt_normal.invert();
       if( covariance_rpt_inv_normal == null ) {
@@ -117,7 +133,6 @@ public final class kernel_t {
     	  voting_limit = 0;
     	  return;
       }
-      constant_normal = root22pi32 * Math.sqrt(Math.abs(covariance_rpt_normal.determinant()));
 	  EigenvalueDecomposition eigenvalue_decomp = new EigenvalueDecomposition(covariance_rpt_normal);
 	  double[] eigenvalues_vector = eigenvalue_decomp.getRealEigenvalues();
 	  Matrix3 eigenvectors_matrix = eigenvalue_decomp.getV();
@@ -127,7 +142,8 @@ public final class kernel_t {
          min_index = 1;
       if (eigenvalues_vector[min_index] > eigenvalues_vector[2])
          min_index = 2;
-
+      if( DEBUG )
+    	  System.out.println("kernel_t kernel_load_parameters eigenvalues_vector=["+eigenvalues_vector[0]+" "+eigenvalues_vector[1]+" "+eigenvalues_vector[2]+"] min_index="+min_index);
       // Voting limit calculation (g_min)
       double n_of_standard_variations = 2.0;
       double radius = Math.sqrt( eigenvalues_vector[min_index] ) * n_of_standard_variations;

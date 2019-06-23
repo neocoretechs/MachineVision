@@ -27,7 +27,8 @@ public final class octree_t {
    Vector4d m_middle = new Vector4d();
    Vector4d m_centroid, color;
    double variance1, variance2, variance3;
-   double m_size, representativeness;
+   double m_size;
+   double representativeness;
    short m_level;
    boolean coplanar;
    int votes;
@@ -107,16 +108,29 @@ public final class octree_t {
       double isotropy  = variance2 / variance3;
       if( DEBUG )
     	  System.out.println("octree_t subdivide thickness and isotropy="+thickness+" "+isotropy);
-      if (thickness < settings.max_thickness && isotropy > settings.min_isotropy) {
-         // Refitting step
-         remove_outliers();
-         if( m_indexes.size() == 0) { // did we remove all points?
-        	 coplanar = false;
-        	 return;
-         }
-         least_variance_direction();
-         coplanar = true;
-         return;
+      if( thickness == 0 ) {
+    	    for(int i = m_indexes.size()-1; i >=0 ; i--) {
+    	      if( DEBUG) {
+    	      	System.out.println("octree_t subdivide removing..."+m_indexes.get(i)+" "+m_root.m_points.get(m_indexes.get(i)));
+    	      }
+    	      m_indexes.remove(i);
+    	    }
+            if( m_indexes.size() == 0) { // did we remove all points?
+           	 coplanar = false;
+           	 return;
+            }
+      } else {
+    	  if(thickness < settings.max_thickness && isotropy > settings.min_isotropy) {
+    		  // Refitting step
+    		  remove_outliers();
+    		  if( m_indexes.size() == 0) { // did we remove all points?
+    			  coplanar = false;
+    			  return;
+    		  }
+    		  least_variance_direction();
+    		  coplanar = true;
+    		  return;
+    	  }
       }
    }
    m_children = new octree_t[8];
@@ -195,7 +209,7 @@ public final class octree_t {
       double dp = distance2plane(m_root.m_points.get(m_indexes.get(i)));
       if( dp > (m_size/10.0)) {
     		if( DEBUG) {
-    			System.out.println("octree remove_outliers removing..."+m_indexes.get(i)+" "+m_root.m_points.get(m_indexes.get(i))+" "+dp+" > "+(m_size/10.0));
+    			System.out.println("octree_t remove_outliers removing..."+m_indexes.get(i)+" "+m_root.m_points.get(m_indexes.get(i))+" "+dp+" > "+(m_size/10.0));
     		}
          m_indexes.remove(i);
       } else {
@@ -206,7 +220,7 @@ public final class octree_t {
       m_centroid = centroid.divide(m_indexes.size());
     } else
     	if( DEBUG) {
-			System.out.println("octree remove_outliers: ***m_indexes has ZERO entries...");
+			System.out.println("octree_t remove_outliers: ***m_indexes has ZERO entries...");
 		}
     if( DEBUG ) {
     	System.out.println("octree_t remove_outliers: original m_indexes size="+origSize+" new size="+m_indexes.size());
@@ -222,7 +236,7 @@ public final class octree_t {
      Matrix3 covariance = new Matrix3();
      covariance.set(0,0, 0.0);
  		if( DEBUGVARIANCE) {
- 			System.out.println("octree fast_covariance_matrix verticies="+nverts+" centroid="+m_centroid);
+ 			System.out.println("octree_t fast_covariance_matrix verticies="+nverts+" centroid="+m_centroid);
  			//for(int k = 0; k < nverts; k++) {
  			//	System.out.println("index="+k+": "+(m_root.m_points.get(m_indexes.get(k))));
  			//}
@@ -237,8 +251,8 @@ public final class octree_t {
  		covariance.set(1,1, 0.0);
  		for(int k = 0; k < nverts; k++)
  			covariance.set(1,1, covariance.get(1,1) + 
-    	 		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)) * 
-        		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)));
+    	 		 (m_root.m_points.get(m_indexes.get(k)).get(1) - m_centroid.get(1)) * 
+        		 (m_root.m_points.get(m_indexes.get(k)).get(1) - m_centroid.get(1)));
  		covariance.set(1,1, covariance.get(1,1) / nvertsd);
  		if(Math.abs(m_covariance.get(1,1)) < EPS)
  			m_covariance.set(1,1, 0.0);
@@ -265,7 +279,7 @@ public final class octree_t {
     	 		 (m_root.m_points.get(m_indexes.get(k)).get(2) - m_centroid.get(2)) * 
         		 (m_root.m_points.get(m_indexes.get(k)).get(0) - m_centroid.get(0)));
     		  //(m_root.m_points[m_indexes[k]][2] - m_centroid[2]) * (m_root.m_points[m_indexes[k]][0] - m_centroid[0]);
- 		covariance.set(2,0, covariance.get(2,2) / nvertsd);
+ 		covariance.set(2,0, covariance.get(2,0) / nvertsd);
  		if(Math.abs(m_covariance.get(2,0)) < EPS)
  			m_covariance.set(2,0,0.0);
  		covariance.set(2,1,0.0);
@@ -293,20 +307,11 @@ public final class octree_t {
     */
     private void least_variance_direction(){
 		if( DEBUGVARIANCE) {
-			System.out.println("octree least_variance_direction...computing covariance");
+			System.out.println("octree_t least_variance_direction...computing covariance, eigenvalues and eigenvectors");
 		}
 		m_covariance = fast_covariance_matrix();
-		if( DEBUGVARIANCE ) {
-		System.out.println("octree least_variance_direction...eigenvalue decomp:");//\r\n"+m_covariance);
-		}
 		EigenvalueDecomposition eigenvalue_decomp = new EigenvalueDecomposition(m_covariance);
-		if( DEBUGVARIANCE) {
-			System.out.println("octree least_variance_direction...get real eigenvectors");
-		}
 		double[] eigenvalues_vector = eigenvalue_decomp.getRealEigenvalues();
-		if( DEBUGVARIANCE) {
-			System.out.println("octree least_variance_direction...get eigenvalues");
-		} 
 		int min_index = 0, max_index = 0, middle_index = 0;
 		if(eigenvalues_vector[1] < eigenvalues_vector[min_index]) {
 			min_index = 1;
@@ -327,7 +332,7 @@ public final class octree_t {
 		variance2 = eigenvalues_vector[middle_index];
 		variance3 = eigenvalues_vector[max_index];
 		if( DEBUGVARIANCE) {
-			System.out.println("octree least_variance_direction...");//variance1="+variance1+" variance2="+variance2+" variance3="+variance3);
+			System.out.println("octree_t least_variance_direction...variance1="+variance1+" variance2="+variance2+" variance3="+variance3);
 		}
 		Matrix3 eigenvectors_matrix = eigenvalue_decomp.getV();
 
@@ -335,7 +340,7 @@ public final class octree_t {
 		normal2 = new Vector4d(eigenvectors_matrix.get(0, middle_index), eigenvectors_matrix.get(1, middle_index), eigenvectors_matrix.get(2, middle_index));
 		normal3 = new Vector4d(eigenvectors_matrix.get(0, max_index), eigenvectors_matrix.get(1, max_index), eigenvectors_matrix.get(2, max_index));
 		if( DEBUGVARIANCE) {
-			System.out.println("octree least_variance_direction...");//eigenvector normal1="+normal1+" normal2="+normal2+" normal3="+normal3);
+			System.out.println("octree_t least_variance_direction...eigenvector normal1="+normal1+" normal2="+normal2+" normal3="+normal3);
 		}
     }
     /**

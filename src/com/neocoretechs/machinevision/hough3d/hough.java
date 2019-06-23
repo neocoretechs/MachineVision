@@ -69,6 +69,7 @@ public class hough {
    voting.vote(father, accum, used_bins, settings.max_point_distance);
 	if( DEBUG) {
 		System.out.println("Elapsed voting took "+(System.currentTimeMillis()-startTime)+" ms.");
+		/*
 		ArrayList<ArrayList<accum_ball_cell_t>> ab = accum.getData();
 		System.out.println(">>>>Accum cells="+ab.size());
 		for(int i = 0; i < ab.size(); i++) {
@@ -78,6 +79,7 @@ public class hough {
 				System.out.println(ab.get(i).get(j)); // get accum_ball_cell_t
 			}
 		}
+		*/
 		startTime = System.currentTimeMillis();
 		System.out.println("Peak detection..");
 	}
@@ -85,6 +87,10 @@ public class hough {
    peak_detection.detect(planes, accum, used_bins);
 	if( DEBUG) {
 		System.out.println("Elapsed peak detection took "+(System.currentTimeMillis()-startTime)+" ms.");
+		System.out.println("Used bins:"+used_bins.size());
+		for(bin_t bin : used_bins) {
+			System.out.println("bin="+bin);
+		}
 		ArrayList<ArrayList<accum_ball_cell_t>> ab = accum.getData();
 		System.out.println("Accum cells="+ab.size());
 		for(int i = 0; i < ab.size(); i++) {
@@ -280,15 +286,19 @@ public class hough {
 		rf = new reader_file(args[0]);
 	else
 		rf = new reader_file(null);
-	rf.load_point_cloud(settings, father);
+	if(!rf.load_point_cloud(settings, father)) {
+		System.out.println("File failed to load, so thats it");
+		return;
+	}
 	if( DEBUG ) {
 		System.out.println("Loaded "+father.m_points.size()+" points...");
 	}
-	Vector4d centroid = father.m_centroid.divide(father.m_points.size());
-	// establish farthest distance between any 2 points on any axis.
+	// computed centroid in load_point_cloud
+	//Vector4d centroid = father.m_centroid.divide(father.m_points.size());
+	// establish farthest distance between centroid and any point on any axis.
 	for(Vector4d  vx : father.m_points) {
 		// v = v.subtract(centroid);
-	      Vector4d v = vx.subtract(centroid);
+	      Vector4d v = vx.subtract(father.m_centroid);
 	      max_distance = Math.max(max_distance,Math.abs(v.x));
 	      max_distance = Math.max(max_distance,Math.abs(v.y));
 	      max_distance = Math.max(max_distance,Math.abs(v.z));
@@ -296,8 +306,8 @@ public class hough {
 	      settings.max_point_distance = Math.max(settings.max_point_distance,v.getLength());
 	}
 	if( DEBUG )
-		System.out.println("octree centroid="+centroid+" max vector magnitude="+settings.max_point_distance);
-	father.m_centroid = new Vector4d();
+		System.out.println("octree centroid="+father.m_centroid+" max vector span="+settings.max_point_distance);
+	//father.m_centroid = new Vector4d(); ? orig code
 	father.m_size = max_distance * 2.0;
 	hough h = new hough();
 	accum = h.kht3d(planes_out, father, settings);

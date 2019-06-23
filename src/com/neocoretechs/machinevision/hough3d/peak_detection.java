@@ -25,7 +25,7 @@ public final class peak_detection {
    // Gaussian Convolution of Voted Cells 
    for (bin_t bin : used_bins) {
 	  // may add to m_data?
-      accum_cell_t cell = accum.at(bin.theta_index, bin.phi_index, bin.rho_index);
+      /*accum_cell_t cell =*/ accum.at(bin.theta_index, bin.phi_index, bin.rho_index);
       bin.votes = accum.convolution_value( bin.theta_index, bin.phi_index, bin.rho_index);
       if( DEBUG )
     	  System.out.println("peak_detection detect bin="+bin);
