@@ -6,9 +6,9 @@ package com.neocoretechs.machinevision.hough3d;
  */
 public class bin_t implements Comparable{
   double theta_index;
-  short phi_index;
-  short rho_index;
-  float votes;
+  int phi_index;
+  int rho_index;
+  double votes;
    //public bin_t(){}
   /**
    * 
@@ -16,7 +16,7 @@ public class bin_t implements Comparable{
    * @param phi Phi Index
    * @param rho Rho Index
    */
-   public bin_t(double theta, short phi, short rho) {
+   public bin_t(double theta, int phi, int rho) {
 	   this.theta_index = theta;
 	   this.phi_index = phi;
 	   this.rho_index = rho;

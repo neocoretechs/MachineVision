@@ -14,10 +14,8 @@ package com.neocoretechs.machinevision.hough3d;
  */
 public class hough_settings {
       // Accumulator discretization
-      public static final int phi_num = 30; // accumulator size - phi dimension
-      public static final int rho_num = 300; // accumulator size - rho dimension
-	  // Percentage of the number of points from the point cloud to stop subdividing
-	  public static final double s_ps = 2;//0.002;
+      public static final int phi_num = 30; // accumulator size - phi dimension 30 default
+      public static final int rho_num = 300; // accumulator size - rho dimension 300 default
       // relative tolerances associated with plane thickness (s_alpha) and plane isotropy (s_beta)
 	  // thickness < settings.max_thickness && isotropy > settings.min_isotropy
 	  // s_alpha and s_beta are scaling factors defining relative tolerances for the acceptable amount
@@ -27,7 +25,7 @@ public class hough_settings {
       public static final double max_thickness = .1; //1/25=.04 see above, PCA analysis
       public static final double min_isotropy = .1;  //1/6 = .166 see above, PCA analysis
 	  public static final int s_level = 4;//determines at which octree level we check for variance direction and remove outliers
-	  public static final int s_ms = 5; // minimum number of points per octree node
+	  public static final int s_ms = 3; // minimum number of points per octree node
       public static double max_point_distance = 1; // used for max_point_distance/rho in accumulator voting as delta_rho rho increment value
 	  public static final double max_distance2plane = 1; //.25 determines plane coloring for points < this distance to plane
 	  // this declaration overrides any command line file name input

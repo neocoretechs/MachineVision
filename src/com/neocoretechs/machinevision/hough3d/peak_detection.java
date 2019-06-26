@@ -14,7 +14,8 @@ public final class peak_detection {
 	private static boolean DEBUG = true;
 
 	/**
-	 * Build the planes from bins and ball. 
+	 * Build the planes from bins and ball.
+	 * Each new prospective plane corresponds to a bin.
 	 * @param planes The collection of planes built from bins and the ball
 	 * @param accum the accumulator ball
 	 * @param used_bins Iterate over accumulator detecting cells not adjacent to already inspected ones
@@ -34,8 +35,8 @@ public final class peak_detection {
    //std::stable_sort
    Collections.sort(used_bins);
    // Iterate over accumulator detecting cells not adjacent to already inspected ones
-   for (bin_t bin : used_bins) {
-      if (!accum.visited_neighbor(bin.theta_index, bin.phi_index, bin.rho_index)) {
+   for(bin_t bin : used_bins) {
+      if(!accum.visited_neighbor(bin.theta_index, bin.phi_index, bin.rho_index)) {
          plane_t p = new plane_t();
          // fill new plane instance with p.m_theta, p.m_phi, p.m_rho,
          accum.get_values( p, bin.theta_index, bin.phi_index, bin.rho_index);
@@ -49,16 +50,16 @@ public final class peak_detection {
         	 p.ri = bin.rho_index;
         	 planes.add(p);
         	 if( DEBUG ) {
-        		 System.out.println("peak_detection detect added plane "+p);
+        		 System.out.println("peak_detection detect added plane "+p+" from bin "+bin);
         	 }
          } else {
         	 if( DEBUG ) {
-        		 System.out.println("peak_detection detect no nodes returned from convolution_nodes, so plane not added");
+        		 System.out.println("peak_detection detect no nodes returned from convolution_nodes, so prospective new plane not added for bin "+bin);
         	 } 	 
          }
       } else
     	  if( DEBUG )
-    		  System.out.println("peak_detection detect neighbor already visited for bin indexes bin="+bin);
+    		  System.out.println("peak_detection detect neighbors already visited for bin indexes bin="+bin);
       accum.set_visited( bin.theta_index, bin.phi_index, bin.rho_index );
    }
   }

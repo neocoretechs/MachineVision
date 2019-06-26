@@ -89,38 +89,38 @@ public final class octree_t {
     * remove outliers, compute least_variance_direction again, and set coplanar to true.
     * @param settings
     */
-  void subdivide( hough_settings settings ) {
+  void subdivide() {
 		if(DEBUGSUBDIVIDE ) {
 			System.out.println("octree_t subdivide...level="+m_level+" indicies="+m_indexes.size()+" centoid="+m_centroid);
 		}
    // s_ms verification, obviously the value needs to be > 0 and low values seem to want to blow the stack
-	if (m_indexes.size() < (int)settings.s_ms) 
+	if (m_indexes.size() < (int)hough_settings.s_ms) 
 	    return;
    // s_level verification
 	if(DEBUGSUBDIVIDE) {
-		System.out.println("octree_t subdivide s_level verification in octree..."+(m_level >=settings.s_level)+", "+m_level+" "+settings.s_level);
+		System.out.println("octree_t subdivide s_level verification in octree..."+(m_level >=hough_settings.s_level)+", "+m_level+" "+hough_settings.s_level);
 	}
-   if (m_level >= settings.s_level) {
+   if (m_level >= hough_settings.s_level) {
       // principal component analysis
       least_variance_direction();
       // Planarity verification
       double thickness = variance1 / variance2;
       double isotropy  = variance2 / variance3;
       if( DEBUG )
-    	  System.out.println("octree_t subdivide thickness and isotropy="+thickness+" "+isotropy);
-      if( thickness == 0 ) {
-    	    for(int i = m_indexes.size()-1; i >=0 ; i--) {
-    	      if( DEBUG) {
-    	      	System.out.println("octree_t subdivide removing..."+m_indexes.get(i)+" "+m_root.m_points.get(m_indexes.get(i)));
-    	      }
-    	      m_indexes.remove(i);
-    	    }
-            if( m_indexes.size() == 0) { // did we remove all points?
-           	 coplanar = false;
-           	 return;
-            }
-      } else {
-    	  if(thickness < settings.max_thickness && isotropy > settings.min_isotropy) {
+    	  System.out.println("octree_t subdivide thickness and isotropy="+thickness+" "+isotropy+" m_level="+m_level+" indicies="+m_indexes.size()+" centroid="+m_centroid);
+     // if( thickness == 0 ) {
+    	    //for(int i = m_indexes.size()-1; i >=0 ; i--) {
+    	      //if( DEBUG) {
+    	      //	System.out.println("octree_t subdivide removing..."+m_indexes.get(i)+" "+m_root.m_points.get(m_indexes.get(i)));
+    	      //}
+    	      //m_indexes.remove(i);
+    	    //}
+            //if( m_indexes.size() == 0) { // did we remove all points?
+           	// coplanar = false;
+           	 //return;
+            //}
+      //} else {
+    	  if(thickness < hough_settings.max_thickness && isotropy > hough_settings.min_isotropy) {
     		  // Refitting step
     		  remove_outliers();
     		  if( m_indexes.size() == 0) { // did we remove all points?
@@ -131,7 +131,7 @@ public final class octree_t {
     		  coplanar = true;
     		  return;
     	  }
-      }
+      //}
    }
    m_children = new octree_t[8];
    double newsize = m_size/2.0;
@@ -193,7 +193,7 @@ public final class octree_t {
    for (int i = 0; i < 8 ; i++) {
       m_children[i].m_centroid = m_children[i].m_centroid.divide(m_children[i].m_indexes.size());
       // Recursive subdivision 
-      m_children[i].subdivide(settings);
+      m_children[i].subdivide();
    }
   }
   /**
@@ -372,7 +372,7 @@ public final class octree_t {
   
   	@Override
   	public String toString() {
-	   return "octree_t centroid="+m_centroid+" level="+m_level+" size="+m_size+" points="+m_indexes.size()+" coplanar="+coplanar+" votes="+votes+" representativeness="+representativeness;
+	   return "octree_t centroid="+m_centroid+" level="+m_level+" size="+m_size+" points="+m_indexes.size()+" coplanar="+coplanar+" votes="+votes+" representativeness="+representativeness+" normal1="+normal1+" normal2="+normal2+" normal3="+normal3;
   	}
   	//@Override 
   	//public boolean equals(Object onode) {

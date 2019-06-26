@@ -1,25 +1,24 @@
 package com.neocoretechs.machinevision.hough3d;
 
 import java.util.ArrayList;
-
+/**
+ * An accumulator cell (theta, phi) which constitutes an array of (rho) cells,
+ * AKA bins, in accum_ball_cell_t. The collection of accum_ball_cell_t is at the theta index,
+ * and the phi index is the first index into m_data in acumulatorball_t, which is a phi collection 
+ * of the collections of thetas that hold the array of rho, all of which make up the spherical 
+ * surface of the accumulator ball.
+ * @author jg
+ *
+ */
 public final class accum_cell_t {
-	/**
-	 * An accumulator cell (theta, phi) which constitutes an array of (rho) cells,
-	 * AKA bins, in accum_ball_cell_t. The collection of accum_ball_cell_t is at the theta index,
-	 * and the phi index is the first index into m_data in acumulatorball_t, which is a phi collection 
-	 * of the collections of thetas that hold the array of rho, all of which make up the spherical 
-	 * surface of the accumulator ball.
-	 * @author jg
-	 *
-	 */
 	  ArrayList<octree_t> ref_node = new ArrayList<octree_t>();
 	  private octree_t last_node_voted;
 	  boolean peak; // set when we start accumulating planes, for each plane we use accumulator.at(theta, phi, rho) to get here
 	  boolean visited; // determines if its a neighbor that has been visited in peak_detection detect
 	  boolean voted; // set from cast_vote. If the kernel.node doesnt pass verify_cell
 	  boolean top; // set from voting gaussian_vote_3d
-	  float last_cast_vote; // set from voting cast_vote
-	  float bin; // set from voting cast_vote AND accumulatorball_t convolution_value
+	  double last_cast_vote; // set from voting cast_vote
+	  double bin; // set from voting cast_vote AND accumulatorball_t convolution_value
 
 	   public accum_cell_t() {
 	      last_cast_vote = 0;

@@ -40,14 +40,14 @@ public class hough {
    * @param settings The hough_settings that determine plane construction etc.
    * @return
    */
-  accumulatorball_t kht3d( ArrayList<plane_t> planes, octree_t father, hough_settings settings) {//double max_distance, double distance_discretization, int phi_cells_length )
+  accumulatorball_t kht3d( ArrayList<plane_t> planes, octree_t father) {//double max_distance, double distance_discretization, int phi_cells_length )
 	  long startTime = System.currentTimeMillis();
 	  long totalTime = startTime;
 	if( DEBUG) {
 		System.out.println("Subdivide...");
 	}
    // Subdividing Procedure
-   father.subdivide(settings);
+   father.subdivide();
    if( DEBUG )
 	   System.out.println("Elapsed Subdivide took "+(System.currentTimeMillis()-startTime)+" ms.");
    // debug write octree with coplanar flags
@@ -57,7 +57,7 @@ public class hough {
 		System.out.println("Build accumulator...");
 		startTime = System.currentTimeMillis();
 	}
-   accumulatorball_t accum = new accumulatorball_t(settings.max_point_distance, settings.rho_num, settings.phi_num);
+   accumulatorball_t accum = new accumulatorball_t(hough_settings.max_point_distance, hough_settings.rho_num, hough_settings.phi_num);
 	if( DEBUG) {
 		System.out.println("Elapsed accumulator build took "+(System.currentTimeMillis()-startTime)+" ms.");
 		startTime = System.currentTimeMillis();
@@ -66,7 +66,7 @@ public class hough {
    // Voting Procedures
    ArrayList<bin_t> used_bins = new ArrayList<bin_t>();
    // used bins filled during voting
-   voting.vote(father, accum, used_bins, settings.max_point_distance);
+   voting.vote(father, accum, used_bins, hough_settings.max_point_distance);
 	if( DEBUG) {
 		System.out.println("Elapsed voting took "+(System.currentTimeMillis()-startTime)+" ms.");
 		/*
@@ -136,7 +136,7 @@ public class hough {
    }
    for(int i = 0; i < father.m_points.size(); i++){
 	   for(int p = 0; p < planes.size(); p++) {
-         if (planes.get(p).distance2plane(father.m_points.get(i)) < settings.max_distance2plane) {
+         if (planes.get(p).distance2plane(father.m_points.get(i)) < hough_settings.max_distance2plane) {
             father.m_colors.get(i).set(planes.get(p).m_color);
             break;
          }
@@ -267,7 +267,6 @@ public class hough {
 	Vector4d colors;
 	Vector4d color_map;
 	ArrayList<plane_t> planes_out = new ArrayList<plane_t>();
-	hough_settings settings = new hough_settings();
 	accumulatorball_t accum;
 	octree_t father = new octree_t(true);
 	double size = 0.6;
@@ -286,7 +285,7 @@ public class hough {
 		rf = new reader_file(args[0]);
 	else
 		rf = new reader_file(null);
-	if(!rf.load_point_cloud(settings, father)) {
+	if(!rf.load_point_cloud(father)) {
 		System.out.println("File failed to load, so thats it");
 		return;
 	}
@@ -303,14 +302,14 @@ public class hough {
 	      max_distance = Math.max(max_distance,Math.abs(v.y));
 	      max_distance = Math.max(max_distance,Math.abs(v.z));
 	      // length is vector magnitude from origin
-	      settings.max_point_distance = Math.max(settings.max_point_distance,v.getLength());
+	      hough_settings.max_point_distance = Math.max(hough_settings.max_point_distance,v.getLength());
 	}
 	if( DEBUG )
-		System.out.println("octree centroid="+father.m_centroid+" max vector span="+settings.max_point_distance);
+		System.out.println("octree centroid="+father.m_centroid+" max vector span="+hough_settings.max_point_distance);
 	//father.m_centroid = new Vector4d(); ? orig code
 	father.m_size = max_distance * 2.0;
 	hough h = new hough();
-	accum = h.kht3d(planes_out, father, settings);
+	accum = h.kht3d(planes_out, father);
 	System.out.println("Number of planes detected = "+planes_out.size());
 	for(int i = 0; i < planes_out.size(); i++) {
 		System.out.println(i+"="+planes_out.get(i));

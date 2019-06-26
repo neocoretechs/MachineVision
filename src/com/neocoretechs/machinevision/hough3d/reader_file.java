@@ -31,13 +31,13 @@ public class reader_file {
    * for each point - X,Y,Z,R,G,B ascii delimited by space
    * the processed array chunks of [x][y][0]=R, [x][y][1]=G, [x][y][2]=B, [x][y][3]=D
    */
-  private boolean read_file(hough_settings settings, octree_t node) {
+  private boolean read_file(octree_t node) {
    BufferedReader dis = null;
    int point_num = 0;
    //file.open(settings.file + settings.extension);
-   File f = new File(settings.file+fileName+settings.extension);
+   File f = new File(hough_settings.file+fileName+hough_settings.extension);
    if( !f.exists() ) {
-	   f = new File(settings.file+settings.extension);
+	   f = new File(hough_settings.file+hough_settings.extension);
 	   if(!f.exists()) {
 		   if( fileName != null )
 			   f = new File(fileName);
@@ -91,12 +91,12 @@ public class reader_file {
   * @param settings
   * @param node
   */
-  public boolean load_point_cloud(hough_settings settings, octree_t node) {
+  public boolean load_point_cloud(octree_t node) {
    System.out.print("Loading Point Cloud...");
    node.m_middle.set(new Vector4d(0,0,0));
    node.m_level = 0;
    node.m_root = node;
-   boolean rf = read_file(settings, node); 
+   boolean rf = read_file(node); 
    System.out.println("Size: "+node.m_points.size()+" min="+mix+","+miy+","+miz+" max="+max+","+may+","+maz);
    //settings.s_ms = settings.s_ps * node.m_points.size();
    return rf;

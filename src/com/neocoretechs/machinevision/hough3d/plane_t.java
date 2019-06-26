@@ -11,7 +11,7 @@ public class plane_t {
    boolean m_showing;
    
    ArrayList<octree_t> nodes;
-   float votes;
+   double votes;
    double representativeness;
    double m_theta;
    double m_phi;

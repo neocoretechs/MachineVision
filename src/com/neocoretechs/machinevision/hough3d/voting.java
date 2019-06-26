@@ -11,6 +11,8 @@ import java.util.ArrayList;
  */
 public final class voting {
 	private static boolean DEBUG = false;
+	private static boolean DEBUGKERNEL = true;
+	private static boolean DEBUGCAST = false;
 
 	/**
 	 * Init by calculating kernels recursively, then casting votes for all kernels.
@@ -25,9 +27,14 @@ public final class voting {
 	   // Calculate kernels recursively
 	   ArrayList<kernel_t> used_kernels = new ArrayList<kernel_t>();
 	   kernels(root, accumulator, used_kernels, max_point_distance);
+	   //
 	   // Vote for all kernels
-	   for (short i = 0; i < used_kernels.size(); i++)
-	      gaussian_vote_3d(used_kernels.get(i), accumulator, used_bins); 
+	   for(kernel_t k : used_kernels) {
+		   if( DEBUGKERNEL ) {
+			   System.out.println("voting vote kernel_t="+k);
+		   }
+	      gaussian_vote_3d(k, accumulator, used_bins); 
+	   }
 	}
 	/**
 	 * Cast a vote, this is where bin_t elements are finally added to used_bins upon first vote
@@ -37,20 +44,22 @@ public final class voting {
 	 * @param used_bins
 	 * @param cell accumulator ball cell
 	 * @param kernel
-	 * @param votes Number of votes to cast
+	 * @param pvotes Number of votes to cast
 	 * @param tpr array of theta, phi, rho indexes
 	 * @return false if last vote was smaller than this vote, true if otherwise or first vote
 	 */
-	private static boolean cast_vote(ArrayList<bin_t> used_bins, accum_cell_t cell, kernel_t kernel, double votes, double t, int p, int r){
+	private static boolean cast_vote(ArrayList<bin_t> used_bins, accum_cell_t cell, kernel_t kernel, double pvotes, double t, int p, int r){
 		// Cluster representativeness
-		votes = votes * kernel.node.representativeness; 
+		double votes = pvotes * kernel.node.representativeness;
+		if( DEBUGCAST  )
+			System.out.println("voting cast_vote votes="+votes);
 		// Test if the cell has already been voted by this kernel 
 		if (cell.verify_cell(kernel.node)) {
 			// Test if the previous vote was smaller than the current 
 			if (cell.last_cast_vote < votes) {
 				// Remove 
 				cell.bin += ((-cell.last_cast_vote) + votes);
-				cell.last_cast_vote = (float) votes;
+				cell.last_cast_vote = votes;
 			}
 			else {
 				return false;
@@ -58,13 +67,13 @@ public final class voting {
 			// First node vote
 		} else {   
 			// Store how many votes will be cast
-			cell.last_cast_vote = (float) votes;
+			cell.last_cast_vote = votes;
 			// Increment votes
 			cell.bin += votes;
 			// Add reference of the node that votes for this cell
 			cell.add_reference(kernel.node);
 			if (!cell.voted) {
-				used_bins.add(new bin_t(t, (short)p, (short)r));
+				used_bins.add(new bin_t(t, (int)p, (int)r));
 				cell.voted = true;
 			}
 			// Track last node that votes for this cell, set last_node_voted to kernel.node
@@ -91,7 +100,7 @@ public final class voting {
 		int rho_index,p, inc_rho_index;
 		double rho, t, inc_rho, gauss;
 		boolean voted = false;
-		float votes;
+		double votes;
 		p = (int) tpr[1];//phi_index
 		t = tpr[0];//theta_index;
 		//double[] theta_phi_index = new double[]{tpr[0]/*theta_index*/, tpr[1]/*phi_index*/, 0.0};
@@ -112,8 +121,8 @@ public final class voting {
 			}
 			if (gauss < kernel.voting_limit) 
 				break;
-			if ((votes = (float)(gauss)) >= (float)(0.0)) {
-				voted = cast_vote(used_bins, accum.at(t, (short)p, (short)rho_index), kernel, votes,t, p, rho_index);
+			if ((votes = gauss) >= 0.0) {
+				voted = cast_vote(used_bins, accum.at(t, (int)p, (int)rho_index), kernel, votes,t, p, rho_index);
 			} else 
 				break;
 		}
@@ -136,8 +145,8 @@ public final class voting {
 			}
 			if (gauss < kernel.voting_limit)
 				break;
-			if ((votes = (float)(gauss)) >= (float)(0.0)) {
-				voted = cast_vote(used_bins, accum.at(t, (short)p,(short)rho_index), kernel, votes, t, p, rho_index);
+			if ((votes = gauss) >= 0.0) {
+				voted = cast_vote(used_bins, accum.at(t, (int)p,(int)rho_index), kernel, votes, t, p, rho_index);
 			} else 
 				break;
 		}
@@ -210,7 +219,7 @@ public final class voting {
 	private static void gaussian_vote_3d(kernel_t kernel, accumulatorball_t accum, ArrayList<bin_t> used_bins){
 		//if(kernel.thetaPhiRhoIndex[2] < 0)
 		//	return;
-		accum.at(kernel.thetaPhiRhoIndex[0]/*theta_index*/, (short)kernel.thetaPhiRhoIndex[1]/*phi_index*/,(short)kernel.thetaPhiRhoIndex[2]/*rho_index*/).top = true;
+		accum.at(kernel.thetaPhiRhoIndex[0]/*theta_index*/, (int)kernel.thetaPhiRhoIndex[1]/*phi_index*/,(int)kernel.thetaPhiRhoIndex[2]/*rho_index*/).top = true;
 		gaussian_vote_2d(accum, kernel, used_bins, kernel.thetaPhiRhoIndex/* kernel.theta_index, kernel.phi_index, kernel.rho_index*/, 0, +1);
 		//int phi_index = kernel.phi_index-1;
 		//double theta_index = kernel.theta_index;
@@ -234,9 +243,9 @@ public final class voting {
 		kernel.node = node;   
 		if ((node.m_centroid.Normalized().and(node.normal1)) < 0)  
 			node.normal1 = node.normal1.multiply(-1.0);
-		kernel.phi = Math.acos(node.normal1.z);
+		kernel.rho = Math.sqrt((node.m_centroid.x * node.normal1.x) + (node.m_centroid.y * node.normal1.y) + (node.m_centroid.z * node.normal1.z));
+		kernel.phi = Math.acos(node.normal1.z/kernel.rho);
 		kernel.theta = Math.atan2(node.normal1.y, node.normal1.x);
-		kernel.rho = node.m_centroid.x * node.normal1.x + node.m_centroid.y * node.normal1.y + node.m_centroid.z * node.normal1.z;
 		accum.process_limits(kernel.thetaPhiRhoIndex/*kernel.theta_index, kernel.phi_index, kernel.rho_index*/);
 		// fill kernel.theta_index, kernel.phi_index, kernel.rho_index from the calculated values of kernel theta, phi, rho
 		accum.get_index(kernel.theta, kernel.phi, kernel.rho, kernel);

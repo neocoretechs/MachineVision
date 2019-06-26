@@ -34,7 +34,7 @@ import java.util.ArrayList;
 public final class kernel_t {
 	public static final double root22pi32 = 2.0*Math.sqrt(2.0)*Math.pow(Math.PI,1.5);
 	public static final double NONZERO = 0.001;//paper says .001 but code had as .00001
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 
     octree_t node;
 
@@ -226,9 +226,6 @@ public final class kernel_t {
 	   return "kernel_t node="+node+
 			   " theta="+theta+" phi="+phi+" rho="+rho+
 			   " constant_normal="+constant_normal+" voting limit="+voting_limit+
-			   " node.normal1="+(node != null ? node.normal1 : "null")+
-			   " node.m_size="+(node != null ? node.m_size : "null")+
-			   " node points="+(node != null ? node.m_indexes.size() : "null")+
 			   " thetaPhiRhoIndex[0]="+thetaPhiRhoIndex[0]+
 			   " thetaPhiRhoIndex[1]="+thetaPhiRhoIndex[1]+
 			   " thetaPhiRhoIndex[2]="+thetaPhiRhoIndex[2]+
