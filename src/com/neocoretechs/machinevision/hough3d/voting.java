@@ -52,7 +52,7 @@ public final class voting {
 		// Cluster representativeness
 		double votes = pvotes * kernel.node.representativeness;
 		if( DEBUGCAST  )
-			System.out.println("voting cast_vote votes="+votes);
+			System.out.println("voting cast_vote votes="+votes+" cell="+cell+" kernel="+kernel+" t,p,r="+t+" "+p+" "+r);
 		// Test if the cell has already been voted by this kernel 
 		if (cell.verify_cell(kernel.node)) {
 			// Test if the previous vote was smaller than the current 
@@ -243,16 +243,19 @@ public final class voting {
 		kernel.node = node;   
 		if ((node.m_centroid.Normalized().and(node.normal1)) < 0)  
 			node.normal1 = node.normal1.multiply(-1.0);
-		kernel.rho = Math.sqrt((node.m_centroid.x * node.normal1.x) + (node.m_centroid.y * node.normal1.y) + (node.m_centroid.z * node.normal1.z));
-		kernel.phi = Math.acos(node.normal1.z/kernel.rho);
-		kernel.theta = Math.atan2(node.normal1.y, node.normal1.x);
-		accum.process_limits(kernel.thetaPhiRhoIndex/*kernel.theta_index, kernel.phi_index, kernel.rho_index*/);
-		// fill kernel.theta_index, kernel.phi_index, kernel.rho_index from the calculated values of kernel theta, phi, rho
+		kernel.rho = (node.m_centroid.x * node.normal1.x) + (node.m_centroid.y * node.normal1.y) + (node.m_centroid.z * node.normal1.z);
+		// according to paper, p vector is rho * normal
+		Vector4d pvec = node.normal1.multiply(kernel.rho);
+		kernel.theta = Math.atan2(pvec.y, pvec.x);
+		kernel.phi = Math.acos(pvec.z/kernel.rho);
+		// fill kernel.thetaPhiRhoIndex from the calculated values of kernel theta, phi, rho
 		accum.get_index(kernel.theta, kernel.phi, kernel.rho, kernel);
-		// get_index forms thetaPhiRhoIndex in kernel
-		kernel.thetaPhiRhoIndex[0]/*theta_index*/ = accum.fix_theta(kernel.thetaPhiRhoIndex[0]/*theta_index*/,(int) kernel.thetaPhiRhoIndex[1]/*phi_index*/);
-		kernel.kernel_load_parameters(max_point_distance);
-		used_kernels.add(kernel);
+		if( accum.process_limits(kernel.thetaPhiRhoIndex/*kernel.theta_index, kernel.phi_index, kernel.rho_index*/)) {
+			// get_index forms thetaPhiRhoIndex in kernel
+			kernel.thetaPhiRhoIndex[0]/*theta_index*/ = accum.fix_theta(kernel.thetaPhiRhoIndex[0]/*theta_index*/,(int) kernel.thetaPhiRhoIndex[1]/*phi_index*/);
+			kernel.kernel_load_parameters(max_point_distance);
+			used_kernels.add(kernel);
+		}
 	}
 
 	/**

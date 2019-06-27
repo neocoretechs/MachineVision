@@ -32,7 +32,7 @@ import java.util.ArrayList;
 *
 */
 public final class kernel_t {
-	public static final double root22pi32 = 2.0*Math.sqrt(2.0)*Math.pow(Math.PI,1.5);
+	public static final double root22pi32 = 248.05021344239856140381052053681;//2pi^3 from wiki; 15.7496 - from paper; 2.0*Math.sqrt(2.0)*Math.pow(Math.PI,1.5); - original code changed to paper val.
 	public static final double NONZERO = 0.001;//paper says .001 but code had as .00001
 	private static final boolean DEBUG = false;
 
@@ -101,8 +101,9 @@ public final class kernel_t {
       double w_a = 0.75;
       // Number-of-points importance (w_d)
       double w_d = 1- w_a;
-      node.representativeness = (double)node.m_size/(double)node.m_root.m_size * w_a + 
-								(double)node.m_indexes.size()/(double)node.m_root.m_points.size() * (w_d);
+      // w_a times node size over octree size plus w_d times samples in cluster over total samples in cloud
+      node.representativeness = ( ((double)node.m_size/(double)node.m_root.m_size) * w_a ) + 
+								( ((double)node.m_indexes.size()/(double)node.m_root.m_points.size()) * w_d );
 
       // Uncertainty propagation
 	  Matrix3 jacobian_transposed_normal = Matrix3.transpose(jacobian_normal);
@@ -113,7 +114,7 @@ public final class kernel_t {
    
       // Cluster representativeness
       covariance_rpt_normal.set(0,0, covariance_rpt_normal.get(0,0)+NONZERO);
-      constant_normal = root22pi32 * Math.sqrt(Math.abs(covariance_rpt_normal.determinant()));
+      constant_normal = Math.sqrt(Math.abs(covariance_rpt_normal.determinant())*root22pi32);
       // if matrix is singular determinant is zero and constant_normal is 0
       // Supposedly adding epsilon averts this according to paper and in normal circumstances
       // a singular matrix would mean coplanar samples and voting should be done with bivariate kernel over theta,phi
@@ -145,8 +146,7 @@ public final class kernel_t {
       if( DEBUG )
     	  System.out.println("kernel_t kernel_load_parameters eigenvalues_vector=["+eigenvalues_vector[0]+" "+eigenvalues_vector[1]+" "+eigenvalues_vector[2]+"] min_index="+min_index);
       // Voting limit calculation (g_min)
-      double n_of_standard_variations = 2.0;
-      double radius = Math.sqrt( eigenvalues_vector[min_index] ) * n_of_standard_variations;
+      double radius = Math.sqrt( eigenvalues_vector[min_index] ) * 2;
       voting_limit = trivariated_gaussian_dist_normal( eigenvectors_matrix.get(0, min_index) * radius, 
 													   eigenvectors_matrix.get(1, min_index) * radius, 
 													   eigenvectors_matrix.get(2, min_index) * radius);
@@ -195,7 +195,7 @@ public final class kernel_t {
       //return (std::exp(-0.5 * (dlib::trans(displacement) * covariance_rpt_inv_normal * displacement))/constant_normal);
       // two matrix vector calcs yielding vector
       double [] trans =(Matrix3.transpose(displacement).multiply(covariance_rpt_inv_normal.multiply(displacement)));
-      double gaussDist = getExponentTerm(displacement, trans) / constant_normal;
+      double gaussDist = getExponentTerm(trans);
 	  //if(DEBUG)
 		//  System.out.println("trivariate gaussian dist norml="+gaussDist);
 	  return gaussDist;
@@ -207,7 +207,7 @@ public final class kernel_t {
     * @param preMultiplied the 2 matrix vector calcs
     * @return the multiplication factor of density calculations.
     */
-   private double getExponentTerm(final double[] values, final double[] preMultiplied) {
+   private double getExponentTerm(final double[] values) {
        //final double[] centered = new double[values.length];
        //for (int i = 0; i < centered.length; i++) {
        //    centered[i] = values[i] - means[i];
@@ -215,10 +215,10 @@ public final class kernel_t {
        // I think they are already centered from earlier?
        //final double[] preMultiplied = covariance_rpt_inv_normal.multiply(values/*centered*/);
        double sum = 0;
-       for (int i = 0; i < preMultiplied.length; i++) {
-           sum += preMultiplied[i] * values[i];//centered[i];
+       for (int i = 0; i < values.length; i++) {
+           sum += (Math.exp(-0.5 * values[i]) / constant_normal);//centered[i];
        }
-       return Math.exp(-0.5 * sum);
+       return sum;
    }
    
    @Override
