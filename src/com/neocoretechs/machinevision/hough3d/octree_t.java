@@ -354,6 +354,36 @@ public final class octree_t {
     	return Math.abs(point.subtract(m_centroid).and(normal1.Normalized()));
     }
     /**
+     * 
+     * @param normal
+     * @param theta
+     * @param phi
+     * @param rho
+     */
+    public static void spherical_to_cartesian(Vector4d normal, double theta, double phi, double rho){
+       normal.x = Math.sin(phi) * Math.cos(theta) * rho;
+       normal.y = Math.sin(phi) * Math.sin(theta) * rho;
+       normal.z = Math.cos(phi) * rho;
+    }
+    
+    public static void spherical_to_cartesian(Vector4d normal, Vector4d center, 
+    		double theta, double phi, double rho, double scale){
+        normal.x = center.x + (Math.sin(phi) * Math.cos(theta) * (rho+scale));
+        normal.y = center.y + (Math.sin(phi) * Math.sin(theta) * (rho+scale));
+        normal.z = center.z + (Math.cos(phi) * (rho+scale));
+     }
+    /**
+     * 
+     * @param point
+     * @return theta, phi, rho double array
+     */
+    public static double[] cartesian_to_spherical(Vector4d point) {
+ 	   double rho = point.getLength();
+ 	   double theta = Math.acos(point.z/rho); // betw -1 and 1
+ 	   double phi = Math.atan2(point.y,point.x);
+ 	   return new double[]{theta, phi, rho};
+    }
+    /**
      * If child nodes are not present, add 'this' to the passed node array if this node is marked 'coplanar=true'
      * otherwise recursively perform the operation 
      * @param nodes

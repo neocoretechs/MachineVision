@@ -51,7 +51,7 @@ public class hough {
    if( DEBUG )
 	   System.out.println("Elapsed Subdivide took "+(System.currentTimeMillis()-startTime)+" ms.");
    // debug write octree with coplanar flags
-   writeChildren(father);
+   writer_file.writePerp(father);//writeChildren(father);
    // Initializes the Accumulator, nothing really happens in accumulator until the voting process
 	if( DEBUG) {
 		System.out.println("Build accumulator...");
@@ -146,118 +146,7 @@ public class hough {
    used_bins.clear();
    return accum;
   }
-	/**
-	 * Write CloudCompare point cloud viewer compatible file
-	 * for each point - X,Y,Z,R,G,B ascii delimited by space
-	 * @param planes the processed array chunks
-	 */
-	protected static void writePlanes(ArrayList<plane_t> planes) {
-		DataOutputStream dos = null;
-		File f = new File(hough_settings.file+"houghout"+hough_settings.extension);
-		try {
-			dos = new DataOutputStream(new FileOutputStream(f));
-			for(plane_t p : planes) {
-				for(octree_t o : p.nodes) {
-					writeChildren(o, dos);
-				}
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return;
-		} finally {
-			try {
-				if( dos != null ) {
-					dos.flush();
-					dos.close();
-				}
-			} catch (IOException e) {
-			}		
-		}
-		
-	}
-	/**
-	 * does get_nodes, which does the recursion and only adds coplanar nodes. Output only coplanar nodes
-	 * @param node
-	 */
-	private void writeChildren(octree_t node) {
-		DataOutputStream dos = null;
-		File f = new File(hough_settings.file+"octree"+hough_settings.extension);
-		ArrayList<octree_t> nodes = new ArrayList<octree_t>();
-		node.get_nodes(nodes);
-		int totalPoints = 0;
-		try {
-			dos = new DataOutputStream(new FileOutputStream(f));
-				for(octree_t oct : nodes) {
-					if( oct.m_level < hough_settings.s_level)
-						continue;
-					totalPoints+=oct.m_indexes.size();
-					if( DEBUG )
-						System.out.println(oct);
-					  for(int i = 0; i < oct.m_indexes.size() ; i++) {
-							dos.writeBytes(String.valueOf( oct.m_root.m_points.get(oct.m_indexes.get(i)).x));
-							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf( oct.m_root.m_points.get(oct.m_indexes.get(i)).y));
-							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf(oct.m_root.m_points.get(oct.m_indexes.get(i)).z)); // Z
-							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf(255));
-							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf(oct.m_level*10));
-							dos.writeByte(' ');
-							dos.writeBytes(String.valueOf(oct.m_level*10));
-							dos.writeByte('\r');
-							dos.writeByte('\n');
-						 }
-				}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return;
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if( dos != null ) {
-					dos.flush();
-					dos.close();
-				}
-			} catch (IOException e) {
-			}		
-		}
-		if( DEBUG ) {
-			System.out.println("***octree_t debug write "+f.getPath()+" coplanar regions="+nodes.size()+" total points="+totalPoints);
-		}
-		
-	}
-	
-	private static void writeChildren(octree_t oct, DataOutputStream dos) {
-		try {
-		  for(int i = 0; i < oct.m_indexes.size() ; i++) {
-			dos.writeBytes(String.valueOf( oct.m_root.m_points.get(oct.m_indexes.get(i)).x));
-			dos.writeByte(' ');
-			dos.writeBytes(String.valueOf( oct.m_root.m_points.get(oct.m_indexes.get(i)).y));
-			dos.writeByte(' ');
-			dos.writeBytes(String.valueOf(oct.m_root.m_points.get(oct.m_indexes.get(i)).z)); // Z
-			dos.writeByte(' ');
-			dos.writeBytes(String.valueOf((int)oct.color.get(0)));
-			dos.writeByte(' ');
-			dos.writeBytes(String.valueOf((int)oct.color.get(1)));
-			dos.writeByte(' ');
-			dos.writeBytes(String.valueOf((int)oct.color.get(2)));
-			dos.writeByte('\r');
-			dos.writeByte('\n');
-		  }
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		if (oct.m_children != null) {
-		     for (short i = 0; i < 8 ; i++) {
-		         writeChildren(oct.m_children[i], dos);
-		     }
-		}
-	}
+
   /**
    * Command line invocation of 3dKHT process, reading from file in command line with path set in hough_settings
    * @param args
@@ -315,7 +204,7 @@ public class hough {
 		System.out.println(i+"="+planes_out.get(i));
 		planes_out.get(i).draw();
 	}
-	writePlanes(planes_out);
+	writer_file.writePlanes(planes_out);
   }
 
 }

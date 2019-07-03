@@ -98,7 +98,11 @@ Vector4d multiply(Matrix4d m) {
    return vec;
 }
 
-
+/**
+ * Vector cross product
+ * @param v
+ * @return
+ */
 Vector4d multiplyVectorial(Vector4d v) { // vectorial
    return new Vector4d(y * v.z - z * v.y,
                    z * v.x - x * v.z,

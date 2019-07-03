@@ -390,18 +390,7 @@ public class accumulatorball_t {
       plane.m_phi =   (double)(phi_index) * m_delta_angle;
       plane.m_rho =   (double)(rho_index) * m_delta_rho;
    }
-   /**
-    * 
-    * @param normal
-    * @param theta
-    * @param phi
-    * @param rho
-    */
-   static void spherical_to_cartesian(Vector4d normal, double theta, double phi, double rho){
-      normal.x = Math.sin(phi) * Math.cos(theta) * rho;
-      normal.y = Math.sin(phi) * Math.sin(theta) * rho;
-      normal.z = Math.cos(phi) * rho;
-   }
+ 
    /**
     * 
     * @param theta

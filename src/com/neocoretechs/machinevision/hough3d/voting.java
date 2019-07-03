@@ -243,11 +243,9 @@ public final class voting {
 		kernel.node = node;   
 		if ((node.m_centroid.Normalized().and(node.normal1)) < 0)  
 			node.normal1 = node.normal1.multiply(-1.0);
-		kernel.rho = (node.m_centroid.x * node.normal1.x) + (node.m_centroid.y * node.normal1.y) + (node.m_centroid.z * node.normal1.z);
-		// according to paper, p vector is rho * normal
-		Vector4d pvec = node.normal1.multiply(kernel.rho);
-		kernel.theta = Math.atan2(pvec.y, pvec.x);
-		kernel.phi = Math.acos(pvec.z/kernel.rho);
+		kernel.rho = Math.sqrt((node.m_centroid.x * node.m_centroid.x) + (node.m_centroid.y * node.m_centroid.y) + (node.m_centroid.z * node.m_centroid.z));
+		kernel.theta = Math.atan2(node.m_centroid.y, node.m_centroid.x);
+		kernel.phi = Math.acos(node.m_centroid.z/kernel.rho);
 		// fill kernel.thetaPhiRhoIndex from the calculated values of kernel theta, phi, rho
 		accum.get_index(kernel.theta, kernel.phi, kernel.rho, kernel);
 		if( accum.process_limits(kernel.thetaPhiRhoIndex/*kernel.theta_index, kernel.phi_index, kernel.rho_index*/)) {
