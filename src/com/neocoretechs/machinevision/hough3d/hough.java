@@ -51,7 +51,7 @@ public class hough {
    if( DEBUG )
 	   System.out.println("Elapsed Subdivide took "+(System.currentTimeMillis()-startTime)+" ms.");
    // debug write octree with coplanar flags
-   writer_file.writePerp(father);//writeChildren(father);
+   writer_file.writePerp(father,"planars");//writeChildren(father);
    // Initializes the Accumulator, nothing really happens in accumulator until the voting process
 	if( DEBUG) {
 		System.out.println("Build accumulator...");
@@ -157,9 +157,8 @@ public class hough {
 	Vector4d color_map;
 	ArrayList<plane_t> planes_out = new ArrayList<plane_t>();
 	accumulatorball_t accum;
-	octree_t father = new octree_t(true);
+	octree_t father = new octree_t();
 	double size = 0.6;
-	double max_distance = 0.0; // absolute longest bound in x,y, or z
 	boolean show_settings[];
 	boolean realtime_cond = true;
 	int index_plane = 0;
@@ -183,20 +182,7 @@ public class hough {
 	}
 	// computed centroid in load_point_cloud
 	//Vector4d centroid = father.m_centroid.divide(father.m_points.size());
-	// establish farthest distance between centroid and any point on any axis.
-	for(Vector4d  vx : father.m_points) {
-		// v = v.subtract(centroid);
-	      Vector4d v = vx.subtract(father.m_centroid);
-	      max_distance = Math.max(max_distance,Math.abs(v.x));
-	      max_distance = Math.max(max_distance,Math.abs(v.y));
-	      max_distance = Math.max(max_distance,Math.abs(v.z));
-	      // length is vector magnitude from origin
-	      hough_settings.max_point_distance = Math.max(hough_settings.max_point_distance,v.getLength());
-	}
-	if( DEBUG )
-		System.out.println("octree centroid="+father.m_centroid+" max vector span="+hough_settings.max_point_distance);
-	//father.m_centroid = new Vector4d(); ? orig code
-	father.m_size = max_distance * 2.0;
+
 	hough h = new hough();
 	accum = h.kht3d(planes_out, father);
 	System.out.println("Number of planes detected = "+planes_out.size());

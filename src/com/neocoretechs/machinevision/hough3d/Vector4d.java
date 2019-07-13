@@ -6,10 +6,10 @@ package com.neocoretechs.machinevision.hough3d;
  */
 public class Vector4d {
 
-   double x;
-   double y;
-   double z;
-   double w;
+   public double x;
+   public double y;
+   public double z;
+   public double w;
  
    public Vector4d() { x=y=z=0.0f; w = 1; }
    public Vector4d(double _x, double _y, double _z) {

@@ -243,9 +243,10 @@ public final class voting {
 		kernel.node = node;   
 		if ((node.m_centroid.Normalized().and(node.normal1)) < 0)  
 			node.normal1 = node.normal1.multiply(-1.0);
-		kernel.rho = Math.sqrt((node.m_centroid.x * node.m_centroid.x) + (node.m_centroid.y * node.m_centroid.y) + (node.m_centroid.z * node.m_centroid.z));
-		kernel.theta = Math.atan2(node.m_centroid.y, node.m_centroid.x);
-		kernel.phi = Math.acos(node.m_centroid.z/kernel.rho);
+		double[] tpr = octree_t.cartesian_to_spherical(node.m_centroid);
+		kernel.rho = tpr[2];
+		kernel.theta = tpr[0];
+		kernel.phi = tpr[1];
 		// fill kernel.thetaPhiRhoIndex from the calculated values of kernel theta, phi, rho
 		accum.get_index(kernel.theta, kernel.phi, kernel.rho, kernel);
 		if( accum.process_limits(kernel.thetaPhiRhoIndex/*kernel.theta_index, kernel.phi_index, kernel.rho_index*/)) {

@@ -14,54 +14,45 @@ import java.util.ArrayList;
  */
 public final class octree_t {
    public static final double EPS = 1.E-3;
+   public static double mix = Double.MAX_VALUE;
+   public static double miy = Double.MAX_VALUE;
+   public static double miz = Double.MAX_VALUE;
+   public static double max = Double.MIN_VALUE;
+   public static double may = Double.MIN_VALUE;
+   public static double maz = Double.MIN_VALUE;
+   public static double max_distance = 0.0; // absolute longest bound in x,y, or z
+   public static int point_num = 0;
+   public static ArrayList<Vector4d> m_points = new ArrayList<Vector4d>();
+   public static ArrayList<Vector4d> m_colors= new ArrayList<Vector4d>();
    //private static long octreeNum = 0;
    //protected long octoNum;
    Matrix3 fast_covariance_matrix = new Matrix3();
    Matrix3 m_covariance = new Matrix3();
-   ArrayList<Vector4d> m_points = null;//new ArrayList<Vector4d>();
-   ArrayList<Vector4d> m_colors= new ArrayList<Vector4d>();
+
    ArrayList<Integer> m_indexes= new ArrayList<Integer>(); // points to m_points in root node from subnodes
    octree_t[] m_children = null;
    octree_t m_root;
    Vector4d normal1, normal2, normal3;
-   Vector4d m_middle = new Vector4d();
-   Vector4d m_centroid, color;
-   double variance1, variance2, variance3;
+   Vector4d m_middle = new Vector4d(0,0,0,0);
+   Vector4d m_centroid = new Vector4d(0,0,0,0); 
+   Vector4d color = new Vector4d(0.5,0.5,0.5);
+   double variance1 = 0;
+   double variance2 = 0;
+   double variance3 = 0;
    double m_size;
-   double representativeness;
-   short m_level;
-   boolean coplanar;
-   int votes;
-   private boolean DEBUG = true;
-   private boolean DEBUGVARIANCE = false;
-   private boolean DEBUGSUBDIVIDE = false;
-   /**
-    * Default c'tor sets coplanar false, creates a centroid at 0,0,0 and sets color.
-    */
+   double representativeness = 0;
+   short m_level = 0;
+   boolean coplanar = false;
+   int votes = 0;
+   private static boolean DEBUG = true;
+   private static boolean DEBUGVARIANCE = false;
+   private static boolean DEBUGSUBDIVIDE = false;
+ 
    public octree_t() {
-     coplanar = false;
-     m_centroid = new Vector4d(0,0,0,0);
-     color = new Vector4d(0.5,0.5,0.5);
-     variance1 = variance2 = variance3 = 0.0;
-     votes= 0;
      //++octreeNum; // increment monotonically increasing number to identify this node for comparison
      //octoNum = octreeNum;
   }
-   /**
-    * Special root node c'tor sets coplanar false, creates a centroid at 0,0,0 and sets color.
-    * Also sets m_points to new arraylist of vector4d to hold data points.
-    */
-   public octree_t(boolean root) {
-	 if(root)
-		  m_points = new ArrayList<Vector4d>();
-     coplanar = false;
-     m_centroid = new Vector4d(0,0,0,0);
-     color = new Vector4d(0.5,0.5,0.5);
-     variance1 = variance2 = variance3 = 0.0;
-     votes= 0;
-     //++octreeNum; // increment monotonically increasing number to identify this node for comparison
-     //octoNum = octreeNum;
-  }
+ 
    /**
     * 
     */
@@ -89,7 +80,7 @@ public final class octree_t {
     * remove outliers, compute least_variance_direction again, and set coplanar to true.
     * @param settings
     */
-  void subdivide() {
+   public void subdivide() {
 		if(DEBUGSUBDIVIDE ) {
 			System.out.println("octree_t subdivide...level="+m_level+" indicies="+m_indexes.size()+" centoid="+m_centroid);
 		}
@@ -207,9 +198,9 @@ public final class octree_t {
     int origSize = m_indexes.size();
     for(int i = m_indexes.size()-1; i >=0 ; i--) {
       double dp = distance2plane(m_root.m_points.get(m_indexes.get(i)));
-      if( dp > (m_size/10.0)) {
+      if( dp > (m_size/hough_settings.max_distance2plane)) {
     		if( DEBUG) {
-    			System.out.println("octree_t remove_outliers removing..."+m_indexes.get(i)+" "+m_root.m_points.get(m_indexes.get(i))+" "+dp+" > "+(m_size/10.0));
+    			System.out.println("octree_t remove_outliers removing..."+m_indexes.get(i)+" "+m_root.m_points.get(m_indexes.get(i))+" "+dp+" > "+(m_size/hough_settings.max_distance2plane));
     		}
          m_indexes.remove(i);
       } else {
@@ -354,18 +345,26 @@ public final class octree_t {
     	return Math.abs(point.subtract(m_centroid).and(normal1.Normalized()));
     }
     /**
-     * 
-     * @param normal
-     * @param theta
-     * @param phi
-     * @param rho
+     * Convert the spherical params to cartesian coords in 3D.
+     * @param normal Vector to hold result of transform
+     * @param theta theta value to convert normal.x=sin(phi)*cos(theta)*rho
+     * @param phi phi to convert normal.y=sin(phi) *sin(theta) * rho
+     * @param rho rho to convert normal.z=cos(phi) * rho
      */
     public static void spherical_to_cartesian(Vector4d normal, double theta, double phi, double rho){
        normal.x = Math.sin(phi) * Math.cos(theta) * rho;
        normal.y = Math.sin(phi) * Math.sin(theta) * rho;
        normal.z = Math.cos(phi) * rho;
     }
-    
+    /**
+     * Convert the spherical params to cartesian coords in 3D origin at given center, at given scale.
+     * @param normal Vector to hold result of transform
+     * @param center center point origin of new vector
+     * @param theta theta value to convert normal.x= center.x + sin(phi)*cos(theta)*rho+scale
+     * @param phi phi to convert normal.y= center.y + sin(phi) *sin(theta) * rho+scle
+     * @param rho rho to convert normal.z= center.z + cos(phi) * rho+scle
+     * @param scale scale factor of final vector
+     */
     public static void spherical_to_cartesian(Vector4d normal, Vector4d center, 
     		double theta, double phi, double rho, double scale){
         normal.x = center.x + (Math.sin(phi) * Math.cos(theta) * (rho+scale));
@@ -399,7 +398,65 @@ public final class octree_t {
     		}
     	}
     }
-  
+    /**
+     * Start octree build process
+     * @param node father
+     */
+    public static void buildStart(octree_t node) {
+    	point_num = 0;
+    	node.m_points.clear();
+    	node.m_root = node;
+    }
+    /**
+     * Call to add points to octree
+     * @param node father
+     * @param x
+     * @param y
+     * @param z
+     * @param r
+     * @param g
+     * @param b
+     */
+    public static void build(octree_t node, double x, double y, double z, double r, double g, double b) {
+		Vector4d point = new Vector4d(x,y,z);
+		Vector4d color = new Vector4d(r,g,b);
+		node.m_points.add(point);
+		node.m_colors.add(color);
+		node.m_centroid = node.m_centroid.add(point); // set up to average all points on all axis
+		node.m_indexes.add(point_num++);
+		mix = Math.min(mix,point.x);
+		miy = Math.min(miy,point.y);
+		miz = Math.min(miz,point.z);
+		max = Math.max(max,point.x);
+		may = Math.max(may,point.y);
+		maz = Math.max(maz,point.z);
+    }
+    /**
+     * Finish octree build
+     * @param node father
+     */
+    public static void buildEnd(octree_t node) {
+    	max_distance = 0.0;
+    	node.m_centroid = node.m_centroid.divide(point_num);
+    	node.m_middle.x = (mix+((max-mix)/2));
+    	node.m_middle.y = (miy+((may-miy)/2));
+    	node.m_middle.z = (miz+((maz-miz)/2));
+    	// establish farthest distance between centroid and any point on any axis.
+    	for(Vector4d  vx : node.m_points) {
+    		// v = v.subtract(centroid);
+    		Vector4d v = vx.subtract(node.m_centroid);
+    		max_distance = Math.max(max_distance,Math.abs(v.x));
+    		max_distance = Math.max(max_distance,Math.abs(v.y));
+    		max_distance = Math.max(max_distance,Math.abs(v.z));
+    		// length is vector magnitude from origin
+    		hough_settings.max_point_distance = Math.max(hough_settings.max_point_distance,v.getLength());
+    	}
+    	if( DEBUG )
+    		System.out.println("octree centroid="+node.m_centroid+" max vector span="+hough_settings.max_point_distance);
+    	//father.m_centroid = new Vector4d(); ? orig code
+    	node.m_size = max_distance * 2.0;
+    }
+    
   	@Override
   	public String toString() {
 	   return "octree_t centroid="+m_centroid+" level="+m_level+" size="+m_size+" points="+m_indexes.size()+" coplanar="+coplanar+" votes="+votes+" representativeness="+representativeness+" normal1="+normal1+" normal2="+normal2+" normal3="+normal3;
