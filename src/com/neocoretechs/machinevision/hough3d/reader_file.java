@@ -11,9 +11,8 @@ import java.io.IOException;
  *
  */
 public class reader_file {
-
    String fileName;
-   private boolean DEBUG = false;
+   private static boolean DEBUG = false;
    /**
     * 
     * @param fil
@@ -74,7 +73,7 @@ public class reader_file {
    System.out.print("Loading Point Cloud...");
    octree_t.buildStart(node);
    boolean rf = read_file(node); 
-   System.out.println("Size: "+node.m_points.size()+" min="+octree_t.mix+","+octree_t.miy+","+octree_t.miz+" max="+octree_t.max+","+octree_t.may+","+octree_t.maz);
+   System.out.println("Size: "+node.m_points.size()+" min="+node.mix+","+node.miy+","+node.miz+" max="+node.max+","+node.may+","+node.maz);
    //settings.s_ms = settings.s_ps * node.m_points.size();
    return rf;
   }

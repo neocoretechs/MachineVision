@@ -1,7 +1,8 @@
-package com.neocoretechs.machinevision;
+package com.neocoretechs.machinevision.hough2d;
 
 import java.awt.image.BufferedImage; 
 import java.awt.*; 
+import java.util.ArrayList;
 import java.util.Vector; 
 import java.io.File; 
  
@@ -60,11 +61,11 @@ public class HoughTransform {
         h.addPoints(image); 
  
         // get the lines out 
-        Vector<? extends HoughElem> lines = h.getLines(30); 
+        ArrayList<? extends HoughElem> lines = h.getLines(30); 
  
         // draw the lines back onto the image 
         for (int j = 0; j < lines.size(); j++) { 
-            HoughLine line = (HoughLine) lines.elementAt(j); 
+            HoughLine line = (HoughLine) lines.get(j); 
             line.draw(image, Color.RED.getRGB()); 
         } 
     } 
@@ -152,6 +153,10 @@ public class HoughTransform {
         } 
     } 
  
+    public void clear() {
+    	numPoints = 0;
+    	houghArray = new int[maxTheta][doubleHeight]; 
+    }
     /** 
      * Adds points from an image. The image is assumed to be greyscale black and white, so all pixels that are 
      * not black are counted as edges. The image should have the same dimensions as the one passed to the constructor. 
@@ -202,10 +207,10 @@ public class HoughTransform {
      * 
      * @param percentageThreshold The percentage threshold above which lines are determined from the hough array 
      */ 
-    public Vector<? extends HoughElem> getLines(int threshold) { 
+    public ArrayList<? extends HoughElem> getLines(int threshold) { 
  
         // Initialise the vector of lines that we'll return 
-        Vector<HoughLine> lines = new Vector<HoughLine>(20); 
+        ArrayList<HoughLine> lines = new ArrayList<HoughLine>(20); 
  
         // Only proceed if the hough array is not empty 
         if (numPoints == 0) return lines; 

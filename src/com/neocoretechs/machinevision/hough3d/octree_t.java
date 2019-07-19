@@ -14,24 +14,24 @@ import java.util.ArrayList;
  */
 public final class octree_t {
    public static final double EPS = 1.E-3;
-   public static double mix = Double.MAX_VALUE;
-   public static double miy = Double.MAX_VALUE;
-   public static double miz = Double.MAX_VALUE;
-   public static double max = Double.MIN_VALUE;
-   public static double may = Double.MIN_VALUE;
-   public static double maz = Double.MIN_VALUE;
-   public static double max_distance = 0.0; // absolute longest bound in x,y, or z
-   public static int point_num = 0;
-   public static ArrayList<Vector4d> m_points = new ArrayList<Vector4d>();
-   public static ArrayList<Vector4d> m_colors= new ArrayList<Vector4d>();
+   public double mix = Double.MAX_VALUE;
+   public double miy = Double.MAX_VALUE;
+   public double miz = Double.MAX_VALUE;
+   public double max = Double.MIN_VALUE;
+   public double may = Double.MIN_VALUE;
+   public double maz = Double.MIN_VALUE;
+   public double max_distance = 0.0; // absolute longest bound in x,y, or z
+   public int point_num = 0;
+   public ArrayList<Vector4d> m_points = null;//new ArrayList<Vector4d>();
+   public ArrayList<Vector4d> m_colors = null;//new ArrayList<Vector4d>();
    //private static long octreeNum = 0;
    //protected long octoNum;
    Matrix3 fast_covariance_matrix = new Matrix3();
    Matrix3 m_covariance = new Matrix3();
 
-   ArrayList<Integer> m_indexes= new ArrayList<Integer>(); // points to m_points in root node from subnodes
+   ArrayList<Integer> m_indexes = new ArrayList<Integer>(); // points to m_points in root node from subnodes
    octree_t[] m_children = null;
-   octree_t m_root;
+   octree_t m_root = null;
    Vector4d normal1, normal2, normal3;
    Vector4d m_middle = new Vector4d(0,0,0,0);
    Vector4d m_centroid = new Vector4d(0,0,0,0); 
@@ -52,7 +52,30 @@ public final class octree_t {
      //++octreeNum; // increment monotonically increasing number to identify this node for comparison
      //octoNum = octreeNum;
   }
- 
+   public Vector4d getNormal1() {
+	   return normal1;
+   }
+   public Vector4d getNormal2() {
+	   return normal2;
+   }
+   public Vector4d getNormal3() {
+	   return normal3;
+   }
+   public Vector4d getCentroid() {
+	   return m_centroid;
+   }
+   public int getVotes() {
+	   return votes;
+   }
+   public void setVotes(int nvotes) {
+	   votes = nvotes;
+   }
+   public ArrayList<Integer> getIndexes() {
+	   return m_indexes;
+   }
+   public octree_t getRoot() {
+	   return m_root;
+   }
    /**
     * 
     */
@@ -385,9 +408,9 @@ public final class octree_t {
     /**
      * If child nodes are not present, add 'this' to the passed node array if this node is marked 'coplanar=true'
      * otherwise recursively perform the operation 
-     * @param nodes
+     * @param nodes the array to be filled
      */
-    protected void get_nodes( ArrayList<octree_t> nodes ) {
+    public void get_nodes( ArrayList<octree_t> nodes ) {
     	if (m_children != null) {
     		for (short i = 0; i < 8 ; i++) {
     			m_children[i].get_nodes(nodes);
@@ -399,12 +422,23 @@ public final class octree_t {
     	}
     }
     /**
+     * If child nodes are not present, add 'this' to the passed node array if this node is marked 'coplanar=true'
+     * otherwise recursively perform the operation starting from this
+     * @return the nodes arraylist
+     */
+    public ArrayList<octree_t> get_nodes() {
+    	ArrayList<octree_t> outn = new ArrayList<octree_t>();
+    	get_nodes(outn);
+    	return outn;
+    }
+    /**
      * Start octree build process
      * @param node father
      */
     public static void buildStart(octree_t node) {
-    	point_num = 0;
-    	node.m_points.clear();
+    	node.point_num = 0;
+    	node.m_points = new ArrayList<Vector4d>();
+    	node.m_colors = new ArrayList<Vector4d>();
     	node.m_root = node;
     }
     /**
@@ -423,38 +457,37 @@ public final class octree_t {
 		node.m_points.add(point);
 		node.m_colors.add(color);
 		node.m_centroid = node.m_centroid.add(point); // set up to average all points on all axis
-		node.m_indexes.add(point_num++);
-		mix = Math.min(mix,point.x);
-		miy = Math.min(miy,point.y);
-		miz = Math.min(miz,point.z);
-		max = Math.max(max,point.x);
-		may = Math.max(may,point.y);
-		maz = Math.max(maz,point.z);
+		node.m_indexes.add(node.point_num++);
+		node.mix = Math.min(node.mix,point.x);
+		node.miy = Math.min(node.miy,point.y);
+		node.miz = Math.min(node.miz,point.z);
+		node.max = Math.max(node.max,point.x);
+		node.may = Math.max(node.may,point.y);
+		node.maz = Math.max(node.maz,point.z);
     }
     /**
      * Finish octree build
      * @param node father
      */
     public static void buildEnd(octree_t node) {
-    	max_distance = 0.0;
-    	node.m_centroid = node.m_centroid.divide(point_num);
-    	node.m_middle.x = (mix+((max-mix)/2));
-    	node.m_middle.y = (miy+((may-miy)/2));
-    	node.m_middle.z = (miz+((maz-miz)/2));
+    	node.max_distance = 0.0;
+    	node.m_centroid = node.m_centroid.divide(node.point_num);
+    	node.m_middle.x = (node.mix+((node.max-node.mix)/2));
+    	node.m_middle.y = (node.miy+((node.may-node.miy)/2));
+    	node.m_middle.z = (node.miz+((node.maz-node.miz)/2));
     	// establish farthest distance between centroid and any point on any axis.
     	for(Vector4d  vx : node.m_points) {
     		// v = v.subtract(centroid);
     		Vector4d v = vx.subtract(node.m_centroid);
-    		max_distance = Math.max(max_distance,Math.abs(v.x));
-    		max_distance = Math.max(max_distance,Math.abs(v.y));
-    		max_distance = Math.max(max_distance,Math.abs(v.z));
+    		node.max_distance = Math.max(node.max_distance,Math.abs(v.x));
+    		node.max_distance = Math.max(node.max_distance,Math.abs(v.y));
+    		node.max_distance = Math.max(node.max_distance,Math.abs(v.z));
     		// length is vector magnitude from origin
     		hough_settings.max_point_distance = Math.max(hough_settings.max_point_distance,v.getLength());
     	}
     	if( DEBUG )
     		System.out.println("octree centroid="+node.m_centroid+" max vector span="+hough_settings.max_point_distance);
-    	//father.m_centroid = new Vector4d(); ? orig code
-    	node.m_size = max_distance * 2.0;
+    	node.m_size = node.max_distance * 2.0;
     }
     
   	@Override

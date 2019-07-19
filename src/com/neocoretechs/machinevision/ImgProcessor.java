@@ -22,6 +22,8 @@ import javax.swing.JFrame;
 import org.jtransforms.dct.FloatDCT_2D;
 import org.jtransforms.utils.IOUtils;
 
+import com.neocoretechs.machinevision.hough2d.HoughTransform;
+
 
 public class ImgProcessor {
 	
@@ -167,52 +169,7 @@ public class ImgProcessor {
 	    //System.out.println("Stop. Sum="+summ);  
 	    return coeff;
 	}
-	/**
-	 * Use the encapsulated array coeffs to reduce overhead
-	 * @param filename
-	 */
-	public static float[] processFile2(String filename) {
-		float summ = 0;
-	    FileInputStream fin = null;
-	    File f = new File(filename);
-	    try {
 
-		    fin = new FileInputStream(f);
-		    BufferedImage oimg = ImageIO.read(f);
-		    BufferedImage img = resizeImage(oimg, 512, 512);
-			//displayPanel.lastFrame = img;
-		    CannyEdgeDetector ced = new CannyEdgeDetector();
-		    //BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-		    // Draw the image on to the buffered image
-		    //Graphics2D bGr = bimage.createGraphics();
-		    //bGr.drawImage(img, 0, 0, null);
-		    //bGr.dispose();
-		    // Return the buffered image
-		    //return bimage;
-		    System.out.println(img.getWidth(null)+" "+img.getHeight(null)+" "+img.getWidth()+" "+img.getHeight());
-		    ced.setSourceImage(img);
-		    ced.process();
-		    //int[] pced = ced.getPixelData();
-		    //displayPanel.lastFrame = ced.getEdgesImage();
-	        HoughTransform h = new HoughTransform(img.getWidth(), img.getHeight()); 
-	        if( coeffs == null ) {
-	        	ImgProcessor.createArrayBuffer(h); // allocate the buffer based on image size set up in hough
-	        }
-	        // add the points from the image (or call the addPoint method separately if your points are not in an image 
-	        h.addPoints((BufferedImage) ced.getEdgesImage()); 
-			FloatDCT_2D fdct2d = new FloatDCT_2D(h.getRows(), h.getColumns());
-			h.getLinearArray(coeffs);
-			System.out.println("Linear Array: "+coeffs.length+" hough max:"+h.getHighestValue());
-			fdct2d.inverse(coeffs, false);
-	
-	    } catch(Exception e) {
-	    	e.printStackTrace();
-	    } finally {
-	    	try { fin.close(); } catch(Exception ee) {}
-	    } // try
-	    return coeffs;
-	    //System.out.println("Stop. Sum="+summ);  
-	}
 	  /**
      * This function resize the image file and returns the BufferedImage object that can be saved to file system.
      */

@@ -1,4 +1,4 @@
-package com.neocoretechs.machinevision;
+package com.neocoretechs.machinevision.hough2d;
 
 public class HoughElem {
 

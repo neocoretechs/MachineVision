@@ -68,7 +68,7 @@ public class ImgRecognizer {
 				//'radius' values in the transform is constant, and the other value, theta, is preset at 256
 				// for this model. So 256 increments of arc for one sinus cycle of hough transform covering
 				// the interval from zero to pi
-				float[] a = ImgProcessor.processFile2(targImage.toAbsolutePath().toString());
+				float[] a = ImgProcessor.processFile(targImage.toAbsolutePath().toString());
 				String category = targImage.getParent().getFileName().toString();
 				processPayload(a, category);
 				//computeClosest(a);
