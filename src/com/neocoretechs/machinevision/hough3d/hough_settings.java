@@ -23,11 +23,11 @@ public class hough_settings {
 	  // cluster. According to our experience, s_alpha = 25 and s_beta = 6 produce good
 	  // results
       public static final double max_thickness = 5; //1/25=.04 see above, PCA analysis
-      public static final double min_isotropy = .1;  //1/6 = .166 see above, PCA analysis
-	  public static final int s_level = 7;//determines at which octree level we check for variance direction and remove outliers
-	  public static final int s_ms = 3; // minimum number of points per octree node
+      public static final double min_isotropy = 0;  //1/6 = .166 see above, PCA analysis
+	  public static int s_level = 7;//determines at which octree level we check for variance direction and remove outliers
+	  public static final int s_ms = 2; // minimum number of points per octree node
       public static double max_point_distance = 1; // used for max_point_distance/rho in accumulator voting as delta_rho rho increment value
-	  public static final double max_distance2plane = 5; //divisor for size for max plane distance for octree outlier removal (m_size/max_distance2plane)
+	  public static double max_distance2plane = 5; //divisor for size for max plane distance for octree outlier removal (m_size/max_distance2plane)
 	  // this declaration overrides any command line file name input
 	  //public static String file = "/users/jg/workspace/robocore/motionclouds/roscoe1";
 	  // this pure path declaration allows command line input of file name

@@ -79,7 +79,7 @@ public final class octree_t {
    /**
     * 
     */
-   void clear() {
+   public void clear() {
    if (m_children != null) {
       for(int i = 0; i < 8 ; i++) {
          m_children[i].m_indexes.clear();
