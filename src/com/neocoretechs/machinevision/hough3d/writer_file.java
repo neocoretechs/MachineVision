@@ -198,6 +198,54 @@ public class writer_file {
 		}
 	}
 	/**
+	 * Write a sloped envelope at middle +/- size
+	 * @param node
+	 * @param fileName
+	 */
+	public static void writeEnv(octree_t node, String fileName) {
+		DataOutputStream dos = null;
+		File f = new File(hough_settings.file+fileName+hough_settings.extension);
+		double zincr = .1;
+		ArrayList<octree_t> nodes = new ArrayList<octree_t>();
+		node.get_nodes(nodes);
+	  try {
+		dos = new DataOutputStream(new FileOutputStream(f));
+		Vector4d cen1 = new Vector4d();
+		Vector4d cen2 = new Vector4d();
+		for(octree_t cnode : nodes )  {
+			if( cnode.m_level < hough_settings.s_level)
+				continue;
+			cen1.x = cnode.m_middle.x - (cnode.m_size/2);
+			cen1.y = cnode.m_middle.y - (cnode.m_size/2);
+			cen1.z = cnode.m_middle.z - (cnode.m_size/2);
+			cen2.x = cnode.m_middle.x + (cnode.m_size/2);
+			cen2.y = cnode.m_middle.y + (cnode.m_size/2);
+			cen2.z = cnode.m_middle.z + (cnode.m_size/2);
+			// xmin, ymin, xmax, ymin
+			line3D(dos, (int)cen1.x, (int)cen1.y, (int)cen1.z, (int)cen2.x, (int)cen1.y, (int)cen1.z, 0, 255, 255);
+			// xmax, ymin, xmax, ymax
+			line3D(dos, (int)cen2.x, (int)cen1.y, (int)cen1.z, (int)cen2.x, (int)cen2.y, (int)cen2.z, 0, 255, 255);
+			// xmax, ymax, xmin, ymax
+			line3D(dos, (int)cen2.x, (int)cen2.y, (int)cen2.z, (int)cen1.x, (int)cen2.y, (int)cen2.z, 0, 255, 255);
+			// xmin, ymax, xmin, ymin
+			line3D(dos, (int)cen1.x, (int)cen2.y, (int)cen2.z, (int)cen1.x, (int)cen1.y, (int)cen1.z, 0, 255, 255);
+		}
+	  } catch (FileNotFoundException e) {
+		e.printStackTrace();
+		return;
+	  } catch (IOException e) {
+		e.printStackTrace();
+	  } finally {
+			try {
+				if( dos != null ) {
+					dos.flush();
+					dos.close();
+				}
+			} catch (IOException e) {
+			}		
+		}
+	}
+	/**
 	 * Generate a 3d line between 2 point in given color and write to stream
 	 * @param dos
 	 * @param startx

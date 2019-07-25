@@ -44,7 +44,7 @@ public final class octree_t {
    short m_level = 0;
    boolean coplanar = false;
    int votes = 0;
-   private static boolean DEBUG = true;
+   private static boolean DEBUG = false;
    private static boolean DEBUGVARIANCE = false;
    private static boolean DEBUGSUBDIVIDE = false;
  
@@ -75,6 +75,12 @@ public final class octree_t {
    }
    public octree_t getRoot() {
 	   return m_root;
+   }
+   public Vector4d getMiddle() {
+	   return m_middle;
+   }
+   public double getSize() {
+	   return m_size;
    }
    /**
     * 
