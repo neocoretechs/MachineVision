@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class writer_file {
 	private static boolean DEBUG = false;
@@ -229,6 +230,36 @@ public class writer_file {
 			line3D(dos, (int)cen2.x, (int)cen2.y, (int)cen2.z, (int)cen1.x, (int)cen2.y, (int)cen2.z, 0, 255, 255);
 			// xmin, ymax, xmin, ymin
 			line3D(dos, (int)cen1.x, (int)cen2.y, (int)cen2.z, (int)cen1.x, (int)cen1.y, (int)cen1.z, 0, 255, 255);
+		}
+	  } catch (FileNotFoundException e) {
+		e.printStackTrace();
+		return;
+	  } catch (IOException e) {
+		e.printStackTrace();
+	  } finally {
+			try {
+				if( dos != null ) {
+					dos.flush();
+					dos.close();
+				}
+			} catch (IOException e) {
+			}		
+		}
+	}
+	public static void writeEnv(List<double[]> maxEnv, String fileName) {
+		DataOutputStream dos = null;
+		File f = new File(hough_settings.file+fileName+hough_settings.extension);
+	  try {
+		dos = new DataOutputStream(new FileOutputStream(f));
+		for(double[] cenv : maxEnv)  {
+			// xmin, ymin, xmax, ymin
+			line3D(dos, (int)cenv[0], (int)cenv[1], 0, (int)cenv[2], (int)cenv[1], 0, 0, 255, 255);
+			// xmax, ymin, xmax, ymax
+			line3D(dos, (int)cenv[2], (int)cenv[1], 0, (int)cenv[2], (int)cenv[3], 0, 0, 255, 255);
+			// xmax, ymax, xmin, ymax
+			line3D(dos, (int)cenv[2], (int)cenv[3], 0, (int)cenv[0], (int)cenv[3], 0, 0, 255, 255);
+			// xmin, ymax, xmin, ymin
+			line3D(dos, (int)cenv[0], (int)cenv[3], 0, (int)cenv[0], (int)cenv[1], 0, 0, 255, 255);
 		}
 	  } catch (FileNotFoundException e) {
 		e.printStackTrace();

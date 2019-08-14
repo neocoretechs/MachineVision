@@ -61,6 +61,15 @@ public final class octree_t {
    public Vector4d getNormal3() {
 	   return normal3;
    }
+   public double getVariance1() {
+	   return variance1;
+   }
+   public double getVariance2() {
+	   return variance2;
+   }
+   public double getVariance3() {
+	   return variance3;
+   }
    public Vector4d getCentroid() {
 	   return m_centroid;
    }
@@ -128,19 +137,7 @@ public final class octree_t {
       double isotropy  = variance2 / variance3;
       if( DEBUG )
     	  System.out.println("octree_t subdivide thickness and isotropy="+thickness+" "+isotropy+" m_level="+m_level+" indicies="+m_indexes.size()+" centroid="+m_centroid);
-     // if( thickness == 0 ) {
-    	    //for(int i = m_indexes.size()-1; i >=0 ; i--) {
-    	      //if( DEBUG) {
-    	      //	System.out.println("octree_t subdivide removing..."+m_indexes.get(i)+" "+m_root.m_points.get(m_indexes.get(i)));
-    	      //}
-    	      //m_indexes.remove(i);
-    	    //}
-            //if( m_indexes.size() == 0) { // did we remove all points?
-           	// coplanar = false;
-           	 //return;
-            //}
-      //} else {
-    	  if(thickness < hough_settings.max_thickness && isotropy > hough_settings.min_isotropy) {
+      if(thickness < hough_settings.max_thickness && isotropy > hough_settings.min_isotropy) {
     		  // Refitting step
     		  remove_outliers();
     		  if( m_indexes.size() == 0) { // did we remove all points?
@@ -150,8 +147,7 @@ public final class octree_t {
     		  least_variance_direction();
     		  coplanar = true;
     		  return;
-    	  }
-      //}
+      }
    }
    m_children = new octree_t[8];
    double newsize = m_size/2.0;
