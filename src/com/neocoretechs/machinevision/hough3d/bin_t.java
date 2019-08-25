@@ -1,6 +1,8 @@
 package com.neocoretechs.machinevision.hough3d;
 /**
  * A structure that stores the spherical coordinates of an accumulator cell and the votes it has cast.
+ * This is used standalone in a collection passed to various voting procedures. when an accumulator cell has voted the first
+ * time, a new bin is created and added to used_bins.
  * @author jg
  *
  */

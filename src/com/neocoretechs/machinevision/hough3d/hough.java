@@ -69,17 +69,6 @@ public class hough {
    voting.vote(father, accum, used_bins, hough_settings.max_point_distance);
 	if( DEBUG) {
 		System.out.println("Elapsed voting took "+(System.currentTimeMillis()-startTime)+" ms.");
-		/*
-		ArrayList<ArrayList<accum_ball_cell_t>> ab = accum.getData();
-		System.out.println(">>>>Accum cells="+ab.size());
-		for(int i = 0; i < ab.size(); i++) {
-			System.out.println(">>>accum cell "+i+" size="+ab.get(i).size());
-			for(int j = 0; j < ab.get(i).size(); j++) {
-				System.out.print(">>accumulator cell "+j+"=");
-				System.out.println(ab.get(i).get(j)); // get accum_ball_cell_t
-			}
-		}
-		*/
 		startTime = System.currentTimeMillis();
 		System.out.println("Peak detection..");
 	}
@@ -95,6 +84,10 @@ public class hough {
 		System.out.println("Accum cells="+ab.size());
 		for(int i = 0; i < ab.size(); i++) {
 			System.out.println("accum cell "+i+" size="+ab.get(i).size());
+			for(int j = 0; j < ab.get(i).size(); j++) {
+				System.out.print(">>accumulator cell "+j+"=");
+				System.out.println(ab.get(i).get(j)); // get accum_ball_cell_t
+			}
 		}
 		startTime = System.currentTimeMillis();
 		System.out.println("Peaks detected, accumulate planes..");
@@ -182,7 +175,8 @@ public class hough {
 	}
 	// computed centroid in load_point_cloud
 	//Vector4d centroid = father.m_centroid.divide(father.m_points.size());
-
+	hough_settings.s_level = 4;
+	hough_settings.min_isotropy = .15;
 	hough h = new hough();
 	accum = h.kht3d(planes_out, father);
 	System.out.println("Number of planes detected = "+planes_out.size());

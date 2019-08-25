@@ -34,7 +34,7 @@ public final class peak_detection {
    // Sort the Auxiliary Array (AA - Convoluted Voted Cells) in descending order 
    //std::stable_sort
    Collections.sort(used_bins);
-   // Iterate over accumulator detecting cells not adjacent to already inspected ones
+   // Iterate over accumulator, detecting cells not adjacent to already inspected ones
    for(bin_t bin : used_bins) {
       if(!accum.visited_neighbor(bin.theta_index, bin.phi_index, bin.rho_index)) {
          plane_t p = new plane_t();
