@@ -152,13 +152,17 @@ public class GenNav {
 					writer_file.line3D(dos, (int)subNodes.get(i).getCentroid().x, (int)subNodes.get(i).getCentroid().y, (int)subNodes.get(i).getCentroid().z*10,
 							(int)subNodes.get(i+1).getCentroid().x, (int)subNodes.get(i+1).getCentroid().y, (int)subNodes.get(i+1).getCentroid().z*10,
 							0, 255, 255);
+					if( DEBUG ) 
+						System.out.println("genColHist line3D x="+(int)subNodes.get(i).getCentroid().x+" y="+(int)subNodes.get(i).getCentroid().y+" z="+(int)subNodes.get(i).getCentroid().z*10+
+								" to x="+(int)subNodes.get(i+1).getCentroid().x+" y="+(int)subNodes.get(i+1).getCentroid().y+" z="+(int)subNodes.get(i+1).getCentroid().z*10);
 				}
-				if(subNodes.get(i).getCentroid().z < zMin) {
+				if((int)subNodes.get(i).getCentroid().y >= 0 && subNodes.get(i).getCentroid().z < zMin) {
 					zMin = subNodes.get(i).getCentroid().z;
 					cnode = subNodes.get(i);
 				}
 			}
 			//  min depth
+			if( cnode != null ) {
 			Vector4d cen1 = new Vector4d();
 			Vector4d cen2 = new Vector4d();
 			cen1.x = cnode.getCentroid().x - (cnode.getSize()/2);
@@ -167,14 +171,17 @@ public class GenNav {
 			cen2.x = cnode.getCentroid().x + (cnode.getSize()/2);
 			cen2.y = cnode.getCentroid().y + (cnode.getSize()/2);
 			cen2.z = zMin*10;//cnode.getCentroid().z + (cnode.getSize()/2);
+			if( DEBUG )
+				System.out.println("genColHist env minx,y,z="+cen1+" maxx,y,z="+cen2+" centroid node="+cnode);
 			// xmin, ymin, xmax, ymin
-			writer_file.line3D(dos, (int)cen1.x, (int)cen1.y, (int)cen1.z, (int)cen2.x, (int)cen1.y, (int)cen1.z, 0, 255, 255);
+			writer_file.line3D(dos, (int)cen1.x, (int)cen1.y, (int)cen1.z, (int)cen2.x, (int)cen1.y, (int)cen1.z, 0, 127, 255);
 			// xmax, ymin, xmax, ymax
-			writer_file.line3D(dos, (int)cen2.x, (int)cen1.y, (int)cen1.z, (int)cen2.x, (int)cen2.y, (int)cen2.z, 0, 255, 255);
+			writer_file.line3D(dos, (int)cen2.x, (int)cen1.y, (int)cen1.z, (int)cen2.x, (int)cen2.y, (int)cen2.z, 0, 127, 255);
 			// xmax, ymax, xmin, ymax
-			writer_file.line3D(dos, (int)cen2.x, (int)cen2.y, (int)cen2.z, (int)cen1.x, (int)cen2.y, (int)cen2.z, 0, 255, 255);
+			writer_file.line3D(dos, (int)cen2.x, (int)cen2.y, (int)cen2.z, (int)cen1.x, (int)cen2.y, (int)cen2.z, 0, 127, 255);
 			// xmin, ymax, xmin, ymin
-			writer_file.line3D(dos, (int)cen1.x, (int)cen2.y, (int)cen2.z, (int)cen1.x, (int)cen1.y, (int)cen1.z, 0, 255, 255);
+			writer_file.line3D(dos, (int)cen1.x, (int)cen2.y, (int)cen2.z, (int)cen1.x, (int)cen1.y, (int)cen1.z, 0, 127, 255);
+			}
 	
 	}
 	
