@@ -13,61 +13,101 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
+import org.jtransforms.dct.FloatDCT_1D;
 import org.jtransforms.dct.FloatDCT_2D;
 import org.jtransforms.utils.IOUtils;
 
-import com.neocoretechs.machinevision.hough2d.HoughTransform;
-
+import com.neocoretechs.machinevision.hough3d.hough_settings;
+import com.neocoretechs.machinevision.hough3d.octree_t;
+import com.neocoretechs.robocore.SynchronizedFixedThreadPoolManager;
 
 public class ImgProcessor {
 	
 	public static final int INBUF_SIZE = 65535;
 	private static float[] coeffs = null;
+	private static int camHeight = 480;
+	private static int camWidth = 640;
+    private static BufferedImage imageLx = null;
+	static int[] dataL; // array return from canny with magnitudes
+	static octree_t nodel = null;
+	static octree_t noder = null;
+	static String outDir = "/users/jg/workspace/robocore/motionclouds";
+	private static boolean DEBUG = true;
 	
-	private static void createArrayBuffer(HoughTransform ht) {
-		coeffs = HoughTransform.createLinearArray(ht);
-	}
-	
-	public ImgProcessor(String[] args) {
-	}
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		int[][] kernal = gaussianNormal(127,19);
-		/*
 		String fileName;
-		PlayerFrame displayPanel;
-		JFrame frame = null;
-		new ImgProcessor(args);
-		if(args.length<1) {
-			System.out.println("Usage: java com.neocoretechs.machinevision.ImgProcessor <raw file>\n");
+		//PlayerFrame displayPanel;
+		//JFrame frame = null;
+		if(args.length<1 || args.length>2) {
+			System.out.println("Usage: java com.neocoretechs.machinevision.ImgProcessor [source file] <compare file>\n");
 			return;
 		} else {
+			if(args.length == 1) {
+				/*
+				 * The following will write the result array to a file which is input file name +.csv
+				 */
+				fileName = args[0];
+				if(DEBUG) {
+			    	System.out.println("Processing image file:"+outDir+"/"+fileName+".jpg");
+					System.out.println("Resulting processed template:"+outDir+"/"+fileName+".csv");
+				}
+				float[] a = processFile(fileName);
+				FileOutputStream fos;
+				try {
+					fos = new FileOutputStream(outDir+"/"+fileName+".csv");
+				} catch (FileNotFoundException e1) {
+					e1.printStackTrace();
+					return;
+				}
+				try {
+				for(int i = 0; i < a.length; i++) { // significant coefficients for 256 theta by 512 (+1/2 height) high hough
+					fos.write((String.valueOf(a[i])+"\r\n").getBytes());
+				}
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					try {
+						fos.flush();
+						fos.close();
+					} catch (IOException e) {}
+				}
+				if(DEBUG)
+					System.out.println("Number of processed vectors="+a.length);
+			} else {
+			//frame = new JFrame("Player");
+			//displayPanel = new PlayerFrame();
 
-			frame = new JFrame("Player");
-			displayPanel = new PlayerFrame();
-
-			frame.getContentPane().add(displayPanel, BorderLayout.CENTER);
+			//frame.getContentPane().add(displayPanel, BorderLayout.CENTER);
 
 			// Finish setting up the frame, and show it.
-			frame.addWindowListener(new WindowAdapter() {
-				public void windowClosing(WindowEvent e) {
-					System.exit(0);
-				}
-			});
-			displayPanel.setVisible(true);
-			frame.pack();
-			frame.setVisible(true);
-			frame.setSize(new Dimension(672, 836));
+			//frame.addWindowListener(new WindowAdapter() {
+			//	public void windowClosing(WindowEvent e) {
+			//		System.exit(0);
+			//	}
+			//});
+			//displayPanel.setVisible(true);
+			//frame.pack();
+			//frame.setVisible(true);
+			//frame.setSize(new Dimension(672, 836));
 			
 			fileName = args[0];
+			if(DEBUG) {
+				System.out.println("Preprocessed template:"+outDir+"/"+args[1]+".csv");
+		    	System.out.println("Comparison image file:"+outDir+"/"+fileName+".jpg");
+			}
 			float[] a = processFile(fileName);
 			// read in file 2 and do an RMS error compr
 			File cmprf1 = new File(fileName);
@@ -75,91 +115,102 @@ public class ImgProcessor {
 			String rmsFile = cmprf1.getName()+cmprf2.getName();
 			FileReader fis = null;
 			try {
-				fis = new FileReader(args[1]);
+				fis = new FileReader(outDir+"/"+args[1]+".csv");
 				String cos = null;
 				BufferedReader dr = new BufferedReader(fis);
 				float[] b = new float[a.length];
-				float[] c = new float[a.length];
-				for(int i = 0; i < a.length; i++) {
+				int i = 0;
+				for(; i < a.length; i++) {
 					//System.out.println("Res index:"+i+"="+a[i]);
 					cos = dr.readLine();
+					if(cos == null) break;
 					b[i]=Float.valueOf(cos);
-					c[i]=a[i];
 				}
 				fis.close();
-				System.out.println("RMSE:"+IOUtils.computeRMSE(c, b, 0, c.length, rmsFile));
+				if(DEBUG)
+					System.out.println("Number of processed vectors="+a.length+" RMS elements="+Math.min(a.length,i+1));
+				System.out.println("RMSE:"+IOUtils.computeRMSE(a, b, 0, Math.min(a.length,i+1)));//, rmsFile));
 			} catch (FileNotFoundException e1) {
+				System.out.println("Preprocessed template:"+outDir+"/"+args[1]+".csv could NOT be located, exiting..");
+				System.exit(0);
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 		} // if
-		*/
+		}
+		System.exit(0);
 	}
 	
 	
 	@SuppressWarnings("unused")
 	public static float[] processFile(String filename) {
 		float summ = 0;
-		float[] coeff = null;
 	    FileInputStream fin = null;
-	    File f = new File(filename);
+	    File f = new File(outDir+"/"+filename+".jpg");
 	    try {
-
 		    fin = new FileInputStream(f);
-		    BufferedImage oimg = ImageIO.read(f);
-		    BufferedImage img = resizeImage(oimg, 512, 512);
+		    imageLx = ImageIO.read(f);
+		    //BufferedImage img = resizeImage(oimg, 512, 512);
 			//displayPanel.lastFrame = img;
-		    CannyEdgeDetector ced = new CannyEdgeDetector();
 		    //BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
 		    // Draw the image on to the buffered image
 		    //Graphics2D bGr = bimage.createGraphics();
 		    //bGr.drawImage(img, 0, 0, null);
 		    //bGr.dispose();
-		    // Return the buffered image
-		    //return bimage;
-		    System.out.println(img.getWidth(null)+" "+img.getHeight(null)+" "+img.getWidth()+" "+img.getHeight());
 		    //gf.setWidth(bimage.getWidth());
 		    //gf.setHeight(bimage.getHeight());
 		    //gf.filter(img, bimage);
-		    ced.setSourceImage(img);
-		    ced.process();
-		    int[] pced = ced.getPixelData();
+    	    synchronized(imageLx) {
+       	     CannyEdgeDetector ced = new CannyEdgeDetector();
+       	     ced.setLowThreshold(0.5f);
+       	     ced.setHighThreshold(1f);
+       	     ced.setSourceImage(imageLx);
+       	     dataL = ced.semiProcess();
+       	    }
 		    //displayPanel.lastFrame = ced.getEdgesImage();
-	        HoughTransform h = new HoughTransform(img.getWidth(), img.getHeight());      
-	        // add the points from the image (or call the addPoint method separately if your points are not in an image 
-	        h.addPoints((BufferedImage) ced.getEdgesImage()); 
-	        // get the lines out 
-	        //Vector<HoughLine> lines = h.getLines(30); 
-	        // draw the lines back onto the image 
-	        //for (int j = 0; j < lines.size(); j++) { 
-	        //    HoughLine line = lines.elementAt(j); 
-	        //    line.draw((BufferedImage) displayPanel.lastFrame, Color.RED.getRGB()); 
-	        //} 
-	        /*
-	         * Everything going to displayPanel here views the hough transform representation
-	         * of sinusoidal wave over theta as sine wave with points as radius and greyscale intensity as 
-	         * point density
-	         *
-	        displayPanel.lastFrame = h.getHoughArrayImage();
-			displayPanel.invalidate();
-			displayPanel.updateUI();
-			*/	
-			FloatDCT_2D fdct2d = new FloatDCT_2D(h.getRows(), h.getColumns());
-			coeff = h.getLinearArray();
-			System.out.println("Linear Array: "+coeff.length+" hough max:"+h.getHighestValue());
-			fdct2d.inverse(coeff, false);
-			//
-			/*
-			 * The following will write the result array to a file which is input file name +.csv
-			 
-			FileOutputStream fos = new FileOutputStream(fileName+".csv");
-			for(int i = 0; i < 185344; i++) { // significant coefficients for 256 theta by 512 (+1/2 height) high hough
-				fos.write((String.valueOf(coeff[i])+"\r\n").getBytes());
-				summ += coeff[i];
+			//displayPanel.invalidate();
+			//displayPanel.updateUI();
+			nodel = new octree_t();
+			octree_t.buildStart(nodel);
+			genOctree();
+	     	octree_t.buildEnd(nodel);
+     		// set our new maximal level
+     		hough_settings.s_level = 5;
+     		// set the distance to plane large to not throw out outliers 
+     		// this is a divisor so we set to 1
+     		hough_settings.max_distance2plane = 1;
+     		hough_settings.min_isotropy = .01; // prevent elongated or vertical funky planes
+	     	nodel.subdivide();
+			if( DEBUG  ) {
+				System.out.println("Loaded "+nodel.m_points.size()+" points...");
 			}
-			fos.flush();fos.close();
-			*/
-	
+			// computed centroid in load_point_cloud
+			//Vector4d centroid = father.m_centroid.divide(father.m_points.size());
+		   ArrayList<octree_t> nodes = nodel.get_nodes();
+		   coeffs = new float[nodes.size()];
+		   int i = 0;
+		   for(octree_t node: nodes) {
+			   double[] sph1 = octree_t.cartesian_to_spherical(node.getCentroid()); //1=phi, 2=rho
+			   double degPhi = Math.toDegrees(sph1[1]);
+			   if( degPhi < 0.0) {
+				    degPhi += 360.0;
+			   }
+			   // axis of middle variance, perp to normal
+			   double[] sph2 = octree_t.cartesian_to_spherical(node.getNormal2());
+			   double degPhi2 = Math.toDegrees(sph2[1]);
+			   if( degPhi2 < 0.0) {
+				    degPhi2 += 360.0;
+			   }
+			   // our rho for 2 is eigenvalue
+			   // form the vector from normal2 and its magnitude (eigenvalue) toward centroid to origin 0,0 center
+			   long val = ((short)degPhi2)<<48 | ((short)node.getVariance2())<<32 | ((short)degPhi)<<16 | (short)sph1[2];
+			   if(DEBUG)
+				   System.out.println("val "+i+"="+val+" (float)val="+(float)val+" -- "+(short)degPhi2+" "+(short)node.getVariance2()+" "+(short)degPhi+" "+(short)sph1[2]);
+			   coeffs[i++] = (float)val;
+			   
+		   }
+		   FloatDCT_1D fdct1d = new FloatDCT_1D(i);
+		   fdct1d.inverse(coeffs, false);
 	    } catch(Exception e) {
 	    	e.printStackTrace();
 	    } finally {
@@ -167,9 +218,75 @@ public class ImgProcessor {
 	    } // try
 
 	    //System.out.println("Stop. Sum="+summ);  
-	    return coeff;
+	    return coeffs;
 	}
 
+	public static void genOctree() {
+		final AtomicInteger yStart = new AtomicInteger();
+		long etime = System.currentTimeMillis();
+		yStart.set(0);
+		int numThreads = camHeight/10;
+		int execLimit = camHeight;
+		  //
+		  // spin all threads necessary for execution
+		  //
+		  for(int syStart = 0; syStart < execLimit; syStart++) {
+			SynchronizedFixedThreadPoolManager.getInstance(numThreads, execLimit).spin(new Runnable() {
+			  @Override
+			  public void run() {
+					imageToOctrees(dataL, imageLx, yStart.getAndIncrement(), camWidth, camHeight, nodel);
+			  } // run
+		    }); // spin
+		  } // for syStart
+		  try {
+			SynchronizedFixedThreadPoolManager.getInstance().waitForGroupToFinish();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		  System.out.println("Process time one="+(System.currentTimeMillis()-etime));
+	}
+	
+	/**
+	 * Translate 2 edge detected image integer linear arrays of edge data and their corresponding RGB images
+	 * into 2 octrees where the Z is set to 1. Intended to be 1 scan line in multithreaded parallel thread group.
+	 * @param imageL image result of Canny edge detector
+	 * @param imageLx2 RGB image source 
+	 * @param yStart The Y scan line to process, this should be Atomic Integer incrementing per thread assignment
+	 * @param width width of images
+	 * @param height height of images
+	 * @param nodel octree root node, filled by this method partially
+	 */
+	public static final void imageToOctrees(int[] imageL,  
+											BufferedImage imageLx2, 
+											int yStart, 
+											int width, int height,
+											octree_t nodel) {
+		int[] imgsrcL = new int[width]; // image scan line 
+   		int[] imgsrcLx = new int[width]; // image scan line 
+ 		synchronized(imageL) {
+ 			// gradient magnitude
+ 			System.arraycopy(Arrays.copyOfRange(imageL, yStart*width, (yStart+1)*width), 0, imgsrcL, 0, width);
+ 		}
+		synchronized(imageLx2) {
+			imageLx2.getRGB(0, yStart, width, 1, imgsrcLx, 0, width);
+		}	
+	  	for(int xsrc = 0; xsrc < width; xsrc++) {
+	  		// If the left image pixel which is the target to receive the depth value is not edge, continue
+			if(imgsrcL[xsrc] == 0)
+					continue;
+			double ks = xsrc - (width/2);
+			double ms = yStart - (height/2);
+			double os = 1;//(Bf/2) - imgsrcL[xsrc]; // gradient intensity
+
+			synchronized(nodel) {
+				octree_t.build(nodel, (double)ks, (double)ms, os, 
+					((imgsrcLx[xsrc] & 0x00FF0000) >> 16 ), 
+					((imgsrcLx[xsrc] & 0x0000FF00) >> 8), 
+					((imgsrcLx[xsrc] & 0x000000FF) ));
+			}
+		} //++xsrc  move to next x subject in left image at this scanline y
+	}
 	  /**
      * This function resize the image file and returns the BufferedImage object that can be saved to file system.
      */
