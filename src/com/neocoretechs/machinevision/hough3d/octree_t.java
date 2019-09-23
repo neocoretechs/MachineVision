@@ -14,7 +14,7 @@ import java.util.ArrayList;
  */
 public final class octree_t {
    public static final double EPS = 1.E-3;
-   public double mix = Double.MAX_VALUE;
+   public double mix = Double.MAX_VALUE; //root node values. Not static because we can have multiple octrees
    public double miy = Double.MAX_VALUE;
    public double miz = Double.MAX_VALUE;
    public double max = Double.MIN_VALUE;
@@ -386,8 +386,8 @@ public final class octree_t {
      * @param normal Vector to hold result of transform
      * @param center center point origin of new vector
      * @param theta theta value to convert normal.x= center.x + sin(phi)*cos(theta)*rho+scale
-     * @param phi phi to convert normal.y= center.y + sin(phi) *sin(theta) * rho+scle
-     * @param rho rho to convert normal.z= center.z + cos(phi) * rho+scle
+     * @param phi phi to convert normal.y= center.y + sin(phi) *sin(theta) * rho+scale
+     * @param rho rho to convert normal.z= center.z + cos(phi) * rho+scale
      * @param scale scale factor of final vector
      */
     public static void spherical_to_cartesian(Vector4d normal, Vector4d center, 
