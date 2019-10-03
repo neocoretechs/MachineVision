@@ -87,7 +87,13 @@ public class Vector4d {
   public double and(Vector4d v) { // scalar
    return x*v.x + y*v.y + z*v.z;
   }
-
+  public double and2d(Vector4d v) {
+	  return x*v.x + y*v.y;
+  } 
+  public double and4d(Vector4d v) { // scalar
+	   return x*v.x + y*v.y + z*v.z + w*v.w;
+  }
+  
   public Vector4d multiply(Matrix4d m) {
    Vector4d vec = new Vector4d();
    vec.x = x * m.data[0] + y * m.data[4] + z * m.data[8] + w * m.data[12];

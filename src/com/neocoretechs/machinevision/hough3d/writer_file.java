@@ -136,7 +136,6 @@ public class writer_file {
 	public static void writePerp(octree_t node, String fileName) {
 		DataOutputStream dos = null;
 		File f = new File(hough_settings.file+fileName+hough_settings.extension);
-		double zincr = .1;
 		ArrayList<octree_t> nodes = new ArrayList<octree_t>();
 		node.get_nodes(nodes);
 	  try {
@@ -149,33 +148,12 @@ public class writer_file {
 			if( cnode.m_level < hough_settings.s_level)
 				continue;
 			// spherical of centroid
-			double[] tpr = octree_t.cartesian_to_spherical(cnode.normal1);
-			if( DEBUG )
-				System.out.println("centroid="+cnode.m_centroid+" variance1="+cnode.variance1+" tpr:"+tpr[0]+" "+tpr[1]+" "+tpr[2]);
-			// generate normal to plane from centroid scaled to variance1 eigenvalue
-			octree_t.spherical_to_cartesian(cen1, cnode.m_centroid, tpr[0], tpr[1], tpr[2], cnode.variance1);
+			genPerp(cnode, cen1, cen2, cen3, cen4);
 			line3D(dos, (int)cnode.m_centroid.x, (int)cnode.m_centroid.y, (int)cnode.m_centroid.z, (int)cen1.x, (int)cen1.y, (int)cen1.z, 255, 255, 255);
 			// axis of middle variance, perp to normal
-			tpr = octree_t.cartesian_to_spherical(cnode.normal2);
-			if( DEBUG )
-				System.out.println("variance2="+cnode.variance2+" tpr:"+tpr[0]+" "+tpr[1]+" "+tpr[2]);
-			// mid axis normal2
-			octree_t.spherical_to_cartesian(cen1, cnode.m_centroid, tpr[0], tpr[1], tpr[2], -cnode.variance2);
-			// generate point at end of segment
-			octree_t.spherical_to_cartesian(cen2, cnode.m_centroid, tpr[0], tpr[1], tpr[2], cnode.variance2);
-			if( DEBUG )
-				System.out.println("cen1="+cen1+" "+" cen2="+cen2);
 			line3D(dos, (int)cen1.x, (int)cen1.y, (int)cen1.z, (int)cen2.x, (int)cen2.y, (int)cen2.z, 255, 0, 0);
 			// long axis
-			tpr = octree_t.cartesian_to_spherical(cnode.normal3);
-			if( DEBUG )
-				System.out.println("variance3="+cnode.variance3+" tpr:"+tpr[0]+" "+tpr[1]+" "+tpr[2]);
-			// subtract length of longest axis normal3
-			octree_t.spherical_to_cartesian(cen3, cnode.m_centroid, tpr[0], tpr[1], tpr[2], -cnode.variance3);
 			// generate point at end of long segment
-			octree_t.spherical_to_cartesian(cen4, cnode.m_centroid, tpr[0], tpr[1], tpr[2], cnode.variance3);
-			if( DEBUG )
-				System.out.println("cen3="+cen3+" "+" cen4="+cen4);
 			line3D(dos, (int)cen3.x, (int)cen3.y, (int)cen3.z, (int)cen4.x, (int)cen4.y, (int)cen4.z, 0, 0, 255);
 			// outside
 			line3D(dos, (int)cen1.x, (int)cen1.y, (int)cen1.z, (int)cen4.x, (int)cen4.y, (int)cen4.z, 0, 255, 0);
@@ -197,6 +175,34 @@ public class writer_file {
 			} catch (IOException e) {
 			}		
 		}
+	}
+	
+	public static void genPerp(octree_t cnode, Vector4d cen1, Vector4d cen2, Vector4d cen3, Vector4d cen4) {
+		double[] tpr = octree_t.cartesian_to_spherical(cnode.normal1);
+		if( DEBUG )
+			System.out.println("centroid="+cnode.m_centroid+" variance1="+cnode.variance1+" tpr:"+tpr[0]+" "+tpr[1]+" "+tpr[2]);
+		// generate normal to plane from centroid scaled to variance1 eigenvalue
+		octree_t.spherical_to_cartesian(cen1, cnode.m_centroid, tpr[0], tpr[1], tpr[2], cnode.variance1);
+		// axis of middle variance, perp to normal
+		tpr = octree_t.cartesian_to_spherical(cnode.normal2);
+		if( DEBUG )
+			System.out.println("variance2="+cnode.variance2+" tpr:"+tpr[0]+" "+tpr[1]+" "+tpr[2]);
+		// mid axis normal2
+		octree_t.spherical_to_cartesian(cen1, cnode.m_centroid, tpr[0], tpr[1], tpr[2], -cnode.variance2);
+		// generate point at end of segment
+		octree_t.spherical_to_cartesian(cen2, cnode.m_centroid, tpr[0], tpr[1], tpr[2], cnode.variance2);
+		if( DEBUG )
+			System.out.println("cen1="+cen1+" "+" cen2="+cen2);
+		// long axis
+		tpr = octree_t.cartesian_to_spherical(cnode.normal3);
+		if( DEBUG )
+			System.out.println("variance3="+cnode.variance3+" tpr:"+tpr[0]+" "+tpr[1]+" "+tpr[2]);
+		// subtract length of longest axis normal3
+		octree_t.spherical_to_cartesian(cen3, cnode.m_centroid, tpr[0], tpr[1], tpr[2], -cnode.variance3);
+		// generate point at end of long segment
+		octree_t.spherical_to_cartesian(cen4, cnode.m_centroid, tpr[0], tpr[1], tpr[2], cnode.variance3);
+		if( DEBUG )
+			System.out.println("cen3="+cen3+" "+" cen4="+cen4);
 	}
 	/**
 	 * Write a sloped envelope at middle +/- size

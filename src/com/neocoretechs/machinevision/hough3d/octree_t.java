@@ -494,7 +494,7 @@ public final class octree_t {
     
   	@Override
   	public String toString() {
-	   return "octree_t centroid="+m_centroid+" level="+m_level+" size="+m_size+" points="+m_indexes.size()+" coplanar="+coplanar+" votes="+votes+" representativeness="+representativeness+" normal1="+normal1+" normal2="+normal2+" normal3="+normal3;
+	   return "octree_t centroid="+m_centroid+" level="+m_level+" size="+m_size+" points="+m_indexes.size()+" coplanar="+coplanar+" normal1="+normal1+" normal2="+normal2+" normal3="+normal3+" variance1="+variance1+" variance2="+variance2+" variance3="+variance3;
   	}
   	//@Override 
   	//public boolean equals(Object onode) {
