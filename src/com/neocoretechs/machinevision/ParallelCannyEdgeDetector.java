@@ -2,8 +2,6 @@ package com.neocoretechs.machinevision;
 
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
 
 import com.neocoretechs.robocore.SynchronizedFixedThreadPoolManager;
 
@@ -14,14 +12,15 @@ import com.neocoretechs.robocore.SynchronizedFixedThreadPoolManager;
  * 
  * <p>This class provides a configurable implementation of the Canny edge
  * detection algorithm. This classic algorithm has a number of shortcomings,
- * but remains an effective tool in many scenarios. <em>This class is designed
- * for single threaded use only.</em></p>
+ * but remains an effective tool in many scenarios. <em>This class uses multithreading
+ * in the computeGradients phase, but otherwise does not have, or really need,
+ * explicit method synchronization as there will not be much to gain by external multithreading.</em></p>
  * 
  * <p>Sample usage:</p>
  * 
  * <pre><code>
  * //create the detector
- * CannyEdgeDetector detector = new CannyEdgeDetector();
+ * ParallelCannyEdgeDetector detector = new ParallelCannyEdgeDetector();
  * //adjust its parameters as desired
  * detector.setLowThreshold(0.5f);
  * detector.setHighThreshold(1f);
@@ -30,17 +29,20 @@ import com.neocoretechs.robocore.SynchronizedFixedThreadPoolManager;
  * detector.process();
  * BufferedImage edges = detector.getEdgesImage();
  * </code></pre>
- * 
+ * If you are not after an image, but just want the data array with magnitudes, skip the last 2 steps and just call:
+ * <code>
+ * int[] data = detector.semiProcess();
+ * </code>
  * <p>For a more complete understanding of this edge detector's parameters
  * consult an explanation of the algorithm.</p>
  * 
  * @author Tom Gibara
+ * @author Groff Copyright (c) NeocoreTechs 2019
  *
  */
-
 public class ParallelCannyEdgeDetector {
 	// statics
-	private final static boolean TIMER = true; 
+	private final static boolean TIMER = false; 
 	private final static float GAUSSIAN_CUT_OFF = 0.005f;
 	private final static float MAGNITUDE_SCALE = 100F;
 	private final static float MAGNITUDE_LIMIT = 1000F;
@@ -67,8 +69,6 @@ public class ParallelCannyEdgeDetector {
 	private float[] xGradient;
 	private float[] yGradient;
 	
-	private CyclicBarrier latch;
-	private CyclicBarrier latchOut;
 	private String threadGroupName;
 	
 	// constructors
@@ -76,7 +76,6 @@ public class ParallelCannyEdgeDetector {
 	/**
 	 * Constructs a new detector with default parameters.
 	 */
-	
 	public ParallelCannyEdgeDetector(String threadGroupName) {
 		lowThreshold = 2.5f;
 		highThreshold = 7.5f;
@@ -98,7 +97,6 @@ public class ParallelCannyEdgeDetector {
 	 * 
 	 * @return the source image, or null
 	 */
-	
 	public BufferedImage getSourceImage() {
 		return sourceImage;
 	}
@@ -110,7 +108,6 @@ public class ParallelCannyEdgeDetector {
 	 *  
 	 * @param image a source of luminance data
 	 */
-	
 	public void setSourceImage(BufferedImage image) {
 		sourceImage = image;
 	}
@@ -124,7 +121,6 @@ public class ParallelCannyEdgeDetector {
 	 * @return an image containing the detected edges, or null if the process
 	 * method has not yet been called.
 	 */
-	
 	public BufferedImage getEdgesImage() {
 		return edgesImage;
 	}
@@ -136,7 +132,6 @@ public class ParallelCannyEdgeDetector {
 	 * 
 	 * @param edgesImage expected (though not required) to be null
 	 */
-	
 	public void setEdgesImage(BufferedImage edgesImage) {
 		this.edgesImage = edgesImage;
 	}
@@ -146,7 +141,6 @@ public class ParallelCannyEdgeDetector {
 	 * 
 	 * @return the low hysteresis threshold
 	 */
-	
 	public float getLowThreshold() {
 		return lowThreshold;
 	}
@@ -158,7 +152,6 @@ public class ParallelCannyEdgeDetector {
 	 * 
 	 * @param threshold a low hysteresis threshold
 	 */
-	
 	public void setLowThreshold(float threshold) {
 		if (threshold < 0) throw new IllegalArgumentException();
 		lowThreshold = threshold;
@@ -169,7 +162,6 @@ public class ParallelCannyEdgeDetector {
 	 * 
 	 * @return the high hysteresis threshold
 	 */
-	
 	public float getHighThreshold() {
 		return highThreshold;
 	}
@@ -182,7 +174,6 @@ public class ParallelCannyEdgeDetector {
 	 * 
 	 * @param threshold a high hysteresis threshold
 	 */
-	
 	public void setHighThreshold(float threshold) {
 		if (threshold < 0) throw new IllegalArgumentException();
 		highThreshold = threshold;
@@ -194,7 +185,6 @@ public class ParallelCannyEdgeDetector {
 	 * 
 	 * @return the radius of the convolution operation in pixels
 	 */
-	
 	public int getGaussianKernelWidth() {
 		return gaussianKernelWidth;
 	}
@@ -207,7 +197,6 @@ public class ParallelCannyEdgeDetector {
 	 * @param gaussianKernelWidth a radius for the convolution operation in
 	 * pixels, at least 2.
 	 */
-	
 	public void setGaussianKernelWidth(int gaussianKernelWidth) {
 		if (gaussianKernelWidth < 2) throw new IllegalArgumentException();
 		this.gaussianKernelWidth = gaussianKernelWidth;
@@ -229,8 +218,7 @@ public class ParallelCannyEdgeDetector {
 	 * source image prior to gradient calculation.
 	 * 
 	 * @return a Gaussian kernel radius in pixels, must exceed 0.1f.
-	 */
-	
+	 */	
 	public void setGaussianKernelRadius(float gaussianKernelRadius) {
 		if (gaussianKernelRadius < 0.1f) throw new IllegalArgumentException();
 		this.gaussianKernelRadius = gaussianKernelRadius;
@@ -243,7 +231,6 @@ public class ParallelCannyEdgeDetector {
 	 * 
 	 * @return whether the contrast is normalized
 	 */
-	
 	public boolean isContrastNormalized() {
 		return contrastNormalized;
 	}
@@ -253,7 +240,6 @@ public class ParallelCannyEdgeDetector {
 	 * @param contrastNormalized true if the contrast should be normalized,
 	 * false otherwise
 	 */
-	
 	public void setContrastNormalized(boolean contrastNormalized) {
 		this.contrastNormalized = contrastNormalized;
 	}
@@ -300,18 +286,12 @@ public class ParallelCannyEdgeDetector {
 			yGradient = new float[picsize];
 		}
 	}
-	
-	//NOTE: The elements of the method below (specifically the technique for
-	//non-maximal suppression and the technique for gradient computation)
-	//are derived from an implementation posted in the following forum (with the
-	//clear intent of others using the code):
-	//  http://forum.java.sun.com/thread.jspa?threadID=546211&start=45&tstart=0
-	//My code effectively mimics the algorithm exhibited above.
-	//Since I don't know the providence of the code that was posted it is a
-	//possibility (though I think a very remote one) that this code violates
-	//someone's intellectual property rights. If this concerns you feel free to
-	//contact me for an alternative, though less efficient, implementation.
-	
+	/**
+	 * Compute the gradients and perform the non-maximal suppression
+	 * using parallelized loop interiors.
+	 * @param kernelRadius
+	 * @param kernelWidth
+	 */
 	private void computeGradients(float kernelRadius, int kernelWidth) {
 		
 		//generate the gaussian convolution masks
@@ -354,8 +334,7 @@ public class ParallelCannyEdgeDetector {
 		}
 		*/
 		//-----
-		try{
-			//latch.await();
+		try {
 			long etime = System.currentTimeMillis();
 			int execLimit = (maxX-initX);
 			int numThreads = Math.min(16, execLimit);
@@ -548,12 +527,16 @@ public class ParallelCannyEdgeDetector {
 		//-----
 		if( TIMER )
 			System.out.println("ParallelCannyEdgeDetector.computeGradients time="+(System.currentTimeMillis()-etime));
-		} catch (InterruptedException /*| BrokenBarrierException*/ e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} catch (InterruptedException e) { System.out.println("ParallelCannyEdgeDetector.computeGradients threading interrupted!"); }
 	}
- 
+	/**
+	 * Support for computeGradients parallel computation internal loops.
+	 * @param x
+	 * @param initY
+	 * @param maxY
+	 * @param kwidth
+	 * @param kernel
+	 */
 	private void convolveXY(int x, int initY, int maxY, int kwidth, float[] kernel) {
 		for (int y = initY; y < maxY; y += width) {
 			int index = x + y;
@@ -575,7 +558,14 @@ public class ParallelCannyEdgeDetector {
 			}
 		}
 	}
-	
+	/**
+	 * Support for computeGradients parallel computation internal loops.
+	 * @param x
+	 * @param initY
+	 * @param maxY
+	 * @param kwidth
+	 * @param diffKernel
+	 */
 	private void genXGradient(int x, int initY, int maxY, int kwidth, float[] diffKernel) {
 		for (int y = initY; y < maxY; y += width) {
 			float sum = 0f;
@@ -587,7 +577,14 @@ public class ParallelCannyEdgeDetector {
 			}
 		}
 	}
-	
+	/**
+	 * Support for computeGradients parallel computation internal loops.
+	 * @param x
+	 * @param initY
+	 * @param maxY
+	 * @param kwidth
+	 * @param diffKernel
+	 */
 	private void genYGradient(int x, int initY, int maxY, int kwidth, float[] diffKernel) {
 		for (int y = initY; y < maxY; y += width) {
 			float sum = 0.0f;
@@ -603,7 +600,8 @@ public class ParallelCannyEdgeDetector {
 		}
 	}
 	/**
-	 * This performs the "non-maximal supression" phase of the Canny edge detection.
+	 * Support for computeGradients parallel computation internal loops.
+	 * This performs the "non-maximal suppression" phase of the Canny edge detection.
 	 * We need to compare the gradient magnitude to that in the
 	 * direction of the gradient; only if the value is a local maximum do we consider the point as an edge candidate.
 	 * @param x base offset in X
@@ -682,10 +680,14 @@ public class ParallelCannyEdgeDetector {
 			}
 		}
 	}
-	
-	//NOTE: It is quite feasible to replace the implementation of this method
-	//with one which only loosely approximates the hypot function. I've tested
-	//simple approximations such as Math.abs(x) + Math.abs(y) and they work fine.
+	/**
+	 * It is quite feasible to replace the implementation of this method
+	 * with one which only loosely approximates the hypot function.
+	 * simple approximations such as Math.abs(x) + Math.abs(y) work fine.
+	 * @param x
+	 * @param y
+	 * @return
+	 */
 	private float hypot(float x, float y) {
 		return (float) Math.hypot(x, y);
 	}
@@ -693,12 +695,14 @@ public class ParallelCannyEdgeDetector {
 	private float gaussian(float x, float sigma) {
 		return (float) Math.exp(-(x * x) / (2f * sigma * sigma));
 	}
- 
+	/**
+	 * This implementation reuses the data array to store both
+	 * luminance data from the image, and edge intensity from the processing.
+	 * This is done for memory efficiency
+	 * @param low
+	 * @param high
+	 */
 	private void performHysteresis(int low, int high) {
-		//NOTE: this implementation reuses the data array to store both
-		//luminance data from the image, and edge intensity from the processing.
-		//This is done for memory efficiency, other implementations may wish
-		//to separate these functions.
 		Arrays.fill(data, 0);
  
 		int offset = 0;
@@ -711,7 +715,13 @@ public class ParallelCannyEdgeDetector {
 			}
 		}
  	}
- 
+	/**
+	 * Recursive method supporting performHysteresis
+	 * @param x1
+	 * @param y1
+	 * @param i1
+	 * @param threshold
+	 */
 	private void follow(int x1, int y1, int i1, int threshold) {
 		int x0 = x1 == 0 ? x1 : x1 - 1;
 		int x2 = x1 == width - 1 ? x1 : x1 + 1;
@@ -731,7 +741,10 @@ public class ParallelCannyEdgeDetector {
 			}
 		}
 	}
-
+	/**
+	 * Convert the magnitude value in the data array to an ARGB black or white pixel
+	 * for pixel positions with magnitude > 0
+	 */
 	private void thresholdEdges() {
 		for (int i = 0; i < picsize; i++) {
 			data[i] = data[i] > 0 ? -1 : 0xff000000;
@@ -742,6 +755,9 @@ public class ParallelCannyEdgeDetector {
 		return Math.round(0.299f * r + 0.587f * g + 0.114f * b);
 	}
 	
+	/**
+	 * Fill the data array with grayscale adjusted image data from sourceImage
+	 */
 	private void readLuminance() {
 		int type = sourceImage.getType();
 		if (type == BufferedImage.TYPE_INT_RGB || type == BufferedImage.TYPE_INT_ARGB) {
@@ -776,7 +792,9 @@ public class ParallelCannyEdgeDetector {
 			throw new IllegalArgumentException("Unsupported image type: " + type);
 		}
 	}
- 
+	/**
+	 * Optional method to normalize contrast in data array using histogram.
+	 */
 	private void normalizeContrast() {
 		int[] histogram = new int[256];
 		for (int i = 0; i < data.length; i++) {
@@ -798,11 +816,13 @@ public class ParallelCannyEdgeDetector {
 			data[i] = remap[data[i]];
 		}
 	}
-	
+	/**
+	 * There is currently no mechanism for obtaining the edge data
+	 * in any other format other than an INT_ARGB type BufferedImage.
+	 * This may be easily remedied by providing alternative accessors.
+	 * @param pixels The pixel array which is converted to edgesImage BufferedImage instance.
+	 */
 	public void writeEdges(int pixels[]) {
-		//NOTE: There is currently no mechanism for obtaining the edge data
-		//in any other format other than an INT_ARGB type BufferedImage.
-		//This may be easily remedied by providing alternative accessors.
 		if (edgesImage == null) {
 			edgesImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		}
