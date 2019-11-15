@@ -129,7 +129,7 @@ public class ImgProcessor {
 				fis.close();
 				if(DEBUG)
 					System.out.println("Number of processed vectors="+a.length+" RMS elements="+Math.min(a.length,i+1));
-				System.out.println("RMSE:"+IOUtils.computeRMSE(a, b, 0, Math.min(a.length,i+1)));//, rmsFile));
+				System.out.println("RMSE:"+IOUtils.computeRMSE(a, b, Math.min(a.length,i+1)));//, rmsFile));
 			} catch (FileNotFoundException e1) {
 				System.out.println("Preprocessed template:"+outDir+"/"+args[1]+".csv could NOT be located, exiting..");
 				System.exit(0);

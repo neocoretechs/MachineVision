@@ -122,7 +122,7 @@ public class ImgRecognizer {
 							b[i] = (float) ( (((float)i/(float)elementsToProcess) * (a[i]-cosn)) + cosn);
 							//ad.add(cosn);
 							//b[i] = cosn;
-							double rms = IOUtils.computeRMSE(a, b, 0, i+1);//IOUtils.computeMSE(a, b, 0, i+1);
+							double rms = IOUtils.computeRMSE(a, b, i+1);//IOUtils.computeMSE(a, b, 0, i+1);
 							//double rms = Math.abs(a[i]-b[i]);
 							if( rms < rmsLow ) {
 								rmsLow = rms;

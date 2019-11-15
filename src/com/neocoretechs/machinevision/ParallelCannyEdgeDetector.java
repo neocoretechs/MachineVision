@@ -750,7 +750,21 @@ public class ParallelCannyEdgeDetector {
 			data[i] = data[i] > 0 ? -1 : 0xff000000;
 		}
 	}
-	
+	/**
+	 * Luma represents the achromatic image while chroma represents the color component. 
+	 * In video systems such as PAL, SECAM, and NTSC, a nonlinear luma component (Y') is calculated directly 
+	 * from gamma-compressed primary intensities as a weighted sum, which, although not a perfect 
+	 * representation of the colorimetric luminance, can be calculated more quickly without 
+	 * the gamma expansion and compression used in photometric/colorimetric calculations. 
+	 * In the Y'UV and Y'IQ models used by PAL and NTSC, the rec601 luma (Y') component is computed as
+	 * Math.round(0.299f * r + 0.587f * g + 0.114f * b);
+	 * rec601 Methods encode 525-line 60 Hz and 625-line 50 Hz signals, both with an active region covering 
+	 * 720 luminance samples and 360 chrominance samples per line. The color encoding system is known as YCbCr 4:2:2.
+	 * @param r
+	 * @param g
+	 * @param b
+	 * @return Y'
+	 */
 	private int luminance(float r, float g, float b) {
 		return Math.round(0.299f * r + 0.587f * g + 0.114f * b);
 	}

@@ -32,6 +32,7 @@ public final class octree_t {
    ArrayList<Integer> m_indexes = new ArrayList<Integer>(); // points to m_points in root node from subnodes
    octree_t[] m_children = null;
    octree_t m_root = null;
+   octree_t m_parent = null;
    Vector4d normal1, normal2, normal3;
    Vector4d m_middle = new Vector4d(0,0,0,0);
    Vector4d m_centroid = new Vector4d(0,0,0,0); 
@@ -84,6 +85,12 @@ public final class octree_t {
    }
    public octree_t getRoot() {
 	   return m_root;
+   }
+   public octree_t getParent() {
+	   return m_parent;
+   }
+   public octree_t[] getChildren() {
+	   return m_children;
    }
    public Vector4d getMiddle() {
 	   return m_middle;
@@ -156,6 +163,7 @@ public final class octree_t {
       m_children[i].m_size = newsize;
       m_children[i].m_level = (short) (m_level+1);
       m_children[i].m_root = m_root;
+      m_children[i].m_parent = this;
       m_children[i].m_indexes.ensureCapacity(m_indexes.size()/4);
    }
    double size4 = m_size/4.0;
@@ -399,7 +407,7 @@ public final class octree_t {
     /**
      * 
      * @param point
-     * @return theta, phi, rho double array
+     * @return theta, phi, rho double array. rho is defined as vector magnitude via point,getLength()
      */
     public static double[] cartesian_to_spherical(Vector4d point) {
  	   double rho = point.getLength();
