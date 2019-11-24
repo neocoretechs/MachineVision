@@ -37,6 +37,8 @@
 		    }
 		    return out;
 		}
+		public double[] getValues() { return values; }
+		
 		public Matrix3 diag() {
 		    /* Returns the diagonal of this matrix (as a vector), or
 		       if given a vector, returns a diagonal matrix
