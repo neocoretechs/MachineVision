@@ -100,7 +100,7 @@ public class MeanColorGenerator {
 			data = new int[width*height];
 			idata = 0;
 			for(int i = 0; i < datax.length; i+=3) {
-				data[idata++] = luminance((int)datax[i+2], (int)datax[i+1],  (int)datax[i]);//(int)datax[i+2] << 16 | (int)datax[i+1] << 8 | (int)datax[i];
+				data[idata++] = average((int)datax[i+2], (int)datax[i+1],  (int)datax[i]);//(int)datax[i+2] << 16 | (int)datax[i+1] << 8 | (int)datax[i];
 			}
 			//long etime = System.currentTimeMillis();
 			//MedianCutQuantizer mct = new MedianCutQuantizer(data, 256);
@@ -174,6 +174,10 @@ private int luminance(float r, float g, float b) {
  */
 private int trichromat(float r, float g, float b) {
 	return Math.round(0.2126f * r + 0.7152f * g + 0.0722f * b);
+}
+
+private int average(float r, float g, float b) {
+	return Math.round((r + g + b)/3);
 }
 
 }
