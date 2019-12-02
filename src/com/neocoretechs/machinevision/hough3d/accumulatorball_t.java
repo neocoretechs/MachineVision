@@ -28,8 +28,8 @@ public class accumulatorball_t {
    int m_rho_length;         // Accumulator size (rho dimension)
    int m_theta_length;       // Accumulator size (theta dimension)
 
-   double m_delta_rho;         // Discretization step to the distance (rho)
-   double m_delta_angle;       // Discretization step to the angles (theta & phi)
+   public double m_delta_rho;         // Discretization step to the distance (rho)
+   public double m_delta_angle;// Discretization step to the angles (theta & phi)
 
    private ArrayList<ArrayList<accum_ball_cell_t>> m_data = new ArrayList<ArrayList<accum_ball_cell_t>>();
    
@@ -67,7 +67,7 @@ public class accumulatorball_t {
    * and the t or rho element of the m_data[phi_index] collection
    * 
    */
-   void initialize(double theta_index, int phi_index) {
+   public void initialize(double theta_index, int phi_index) {
       int t = get_theta_index(theta_index, phi_index);
       if( m_data.size() <= phi_index ) {
     	  m_data.ensureCapacity(phi_index+1);
@@ -196,7 +196,7 @@ public class accumulatorball_t {
     * @param phi_index
     * @return
     */
-   double delta_theta(int phi_index) {
+   public double delta_theta(int phi_index) {
       return m_theta_max / (double)(m_data.get(phi_index).size());
    }
    /**
@@ -204,7 +204,7 @@ public class accumulatorball_t {
     * @param phi_index
     * @return
     */
-   double delta_theta_index(int phi_index)
+   public double delta_theta_index(int phi_index)
    {
       return 1.0 / (double)(m_data.get(phi_index).size());
    }
@@ -224,7 +224,7 @@ public class accumulatorball_t {
     * @param theta_phi_index
     * @return
     */
-   boolean process_phi(double[] theta_phi_index /*double theta_index, int phi_index*/) {
+   public boolean process_phi(double[] theta_phi_index /*double theta_index, int phi_index*/) {
       /*theta_index*/ process_theta(theta_phi_index/*theta_index*/);  
       if (theta_phi_index[1] /*phi_index*/ < 0) {
          theta_phi_index[1] = Math.abs(theta_phi_index[1]);
@@ -243,7 +243,7 @@ public class accumulatorball_t {
     * @param theta_phi_index
     * @return
     */
-   boolean process_rho(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
+   public boolean process_rho(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
       if (/*rho_index*/theta_phi_index[2] < 0) {
          theta_phi_index[2] = Math.abs(theta_phi_index[2]);
          /*phi_index*/ theta_phi_index[1] = m_phi_length - theta_phi_index[1];
@@ -260,7 +260,7 @@ public class accumulatorball_t {
     * @param theta_phi_index
     * @return
     */
-   boolean process_limits(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
+   public boolean process_limits(double[] theta_phi_index /*double theta_index, int phi_index, int rho_index*/) {
       process_phi(theta_phi_index /*theta_index, phi_index*/);
       return process_rho(theta_phi_index);
    }
@@ -317,7 +317,7 @@ public class accumulatorball_t {
     * @param rho_index
     * @return bins[rho] of get_theta_index(theta,phi)
     */
-   accum_cell_t at(double theta_index, int phi_index, int rho_index) {
+   public accum_cell_t at(double theta_index, int phi_index, int rho_index) {
 	   //int t = get_theta_index(theta,phi);
 	   //   if (m_data[phi][t] == NULL)
 	   //      m_data[phi][t] =  new accum_ball_cell_t(m_rho_length);
@@ -378,6 +378,17 @@ public class accumulatorball_t {
       kernel.thetaPhiRhoIndex[1] = Math.round(phi / m_delta_angle);
       kernel.thetaPhiRhoIndex[2] = Math.round(rho / m_delta_rho);
    }
+   
+   public double[]get_index(double theta, double phi, double rho) {
+	      //kernel.theta_index = theta/Math.PI*2 + 0.5;
+	      //kernel.phi_index =  Math.round(phi / m_delta_angle);
+	      //kernel.rho_index =  Math.round(rho / m_delta_rho);
+	   double[] thetaPhiRho = new double[3];
+	   thetaPhiRho[0] = theta/(Math.PI*2) + 0.5;
+	   thetaPhiRho[1] = Math.round(phi / m_delta_angle);
+	   thetaPhiRho[2] = Math.round(rho / m_delta_rho);
+	   return thetaPhiRho;
+   }
    /**
     * 
     * @param plane
@@ -397,7 +408,7 @@ public class accumulatorball_t {
     * @param phi
     * @return
     */
-   double fix_theta(double theta, int phi) {
+   public double fix_theta(double theta, int phi) {
       double p_size = m_data.get(phi).size();
       if( p_size == 0 )
     	  return 0;

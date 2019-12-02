@@ -98,6 +98,10 @@ public final class octree_t {
    public double getSize() {
 	   return m_size;
    }
+	public void setNormal1(Vector4d norm1) {
+		normal1 = norm1;		
+	}
+
    /**
     * 
     */

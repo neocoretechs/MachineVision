@@ -13,8 +13,12 @@ public class MeanColorGenerator {
 	public static boolean DEBUG = false;
 	int mean;
 	private int[] data;
+	private int[] datar;
+	private int[] datag;
+	private int[] datab;
 	private BufferedImage sourceImage;
 	private int width, height;
+	private boolean threeChannel = false;
 	
 	public MeanColorGenerator(BufferedImage img, int twidth, int theight) {
 		sourceImage = img;
@@ -22,6 +26,14 @@ public class MeanColorGenerator {
 		height = theight;
 		readImage();
 	}
+	public MeanColorGenerator(BufferedImage img, int twidth, int theight, boolean three) {
+		sourceImage = img;
+		width = twidth;
+		height = theight;
+		threeChannel = three;
+		readImage();
+	}
+	
 	public int[] mean() {
 		mean = 0;
 		int t = 1;
@@ -42,6 +54,9 @@ public class MeanColorGenerator {
 	}
 	public int[] getData() {
 		return data;
+	}
+	public int[][] getData3() {
+		return new int[][]{datar, datag, datab};
 	}
 	public static void setMean(int[] data, int mean) {
 		for(int x = 0; x < data.length; x++)
@@ -97,10 +112,21 @@ public class MeanColorGenerator {
 			if( DEBUG)
 				System.out.println(sourceImage+" 3BYTE_BGR");
 			datax = (byte[]) sourceImage.getData().getDataElements(0, 0, width, height, null);
-			data = new int[width*height];
 			idata = 0;
-			for(int i = 0; i < datax.length; i+=3) {
-				data[idata++] = average((int)datax[i+2], (int)datax[i+1],  (int)datax[i]);//(int)datax[i+2] << 16 | (int)datax[i+1] << 8 | (int)datax[i];
+			if(threeChannel) {
+				datar = new int[width*height];
+				datag = new int[width*height];
+				datab = new int[width*height];
+				for(int i = 0; i < datax.length; i+=3) {
+					datar[idata] = (int)datax[i+2];
+					datag[idata] = (int)datax[i+1];
+					datab[idata++] = (int)datax[i];//(int)datax[i+2] << 16 | (int)datax[i+1] << 8 | (int)datax[i];
+				}
+			} else {
+				data = new int[width*height];
+				for(int i = 0; i < datax.length; i+=3) {
+					data[idata++] = average((int)datax[i+2], (int)datax[i+1],  (int)datax[i]);//(int)datax[i+2] << 16 | (int)datax[i+1] << 8 | (int)datax[i];
+				}
 			}
 			//long etime = System.currentTimeMillis();
 			//MedianCutQuantizer mct = new MedianCutQuantizer(data, 256);
