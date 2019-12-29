@@ -115,7 +115,7 @@ public final class octree_t {
    }
   }
    /**
-    * Subdivide an octree node.
+    * Subdivide octree nodes.
     * RECURSIVE. 
     * Dependent on settings value s_ms, which is minimum size of m_indexes array to limit recursion.
     * s_ms MUST be > 0 and large enough to prevent depth recursion from blowing the stack
@@ -222,6 +222,93 @@ public final class octree_t {
       m_children[i].m_centroid = m_children[i].m_centroid.divide(m_children[i].m_indexes.size());
       // Recursive subdivision 
       m_children[i].subdivide();
+   }
+  }
+   /**
+    * Subdivide octree nodes WITHOUT PCA and outlier removal..
+    * RECURSIVE. 
+    * Dependent on settings value s_ms, which is minimum size of m_indexes array to limit recursion.
+    * s_ms MUST be > 0 and large enough to prevent depth recursion from blowing the stack
+    * set coplanar to true at proper level regardless.
+    * @param settings
+    */
+   public void subdivideFast() {
+		if(DEBUGSUBDIVIDE ) {
+			System.out.println("octree_t subdivideFast...level="+m_level+" indicies="+m_indexes.size()+" centoid="+m_centroid);
+		}
+   // s_ms verification, obviously the value needs to be > 0 and low values seem to want to blow the stack
+	if (m_indexes.size() < (int)hough_settings.s_ms) 
+	    return;
+   // s_level verification
+	if(DEBUGSUBDIVIDE) {
+		System.out.println("octree_t subdivideFast s_level verification in octree..."+(m_level >=hough_settings.s_level)+", "+m_level+" "+hough_settings.s_level);
+	}
+   if (m_level >= hough_settings.s_level) {
+    		  coplanar = true;
+    		  return;
+   }
+   m_children = new octree_t[8];
+   double newsize = m_size/2.0;
+   for (int i = 0; i < 8 ; i++) {
+	  m_children[i] = new octree_t();
+      m_children[i].m_size = newsize;
+      m_children[i].m_level = (short) (m_level+1);
+      m_children[i].m_root = m_root;
+      m_children[i].m_parent = this;
+      m_children[i].m_indexes.ensureCapacity(m_indexes.size()/4);
+   }
+   double size4 = m_size/4.0;
+   // Calculation of son nodes
+   m_children[0].m_middle.x = m_middle.x - size4;
+   m_children[1].m_middle.x = m_middle.x - size4;
+   m_children[2].m_middle.x = m_middle.x - size4;
+   m_children[3].m_middle.x = m_middle.x - size4;
+   m_children[4].m_middle.x = m_middle.x + size4;
+   m_children[5].m_middle.x = m_middle.x + size4;
+   m_children[6].m_middle.x = m_middle.x + size4;
+   m_children[7].m_middle.x = m_middle.x + size4;
+
+   m_children[0].m_middle.y = m_middle.y - size4;
+   m_children[1].m_middle.y = m_middle.y - size4;
+   m_children[2].m_middle.y = m_middle.y + size4;
+   m_children[3].m_middle.y = m_middle.y + size4;
+   m_children[4].m_middle.y = m_middle.y - size4;
+   m_children[5].m_middle.y = m_middle.y - size4;
+   m_children[6].m_middle.y = m_middle.y + size4;
+   m_children[7].m_middle.y = m_middle.y + size4;
+
+   m_children[0].m_middle.z = m_middle.z - size4;
+   m_children[1].m_middle.z = m_middle.z + size4;
+   m_children[2].m_middle.z = m_middle.z - size4;
+   m_children[3].m_middle.z = m_middle.z + size4;
+   m_children[4].m_middle.z = m_middle.z - size4;
+   m_children[5].m_middle.z = m_middle.z + size4;
+   m_children[6].m_middle.z = m_middle.z - size4;
+   m_children[7].m_middle.z = m_middle.z + size4;
+
+   // putting points in its respective children
+   for (int i = 0; i < m_indexes.size() ; i++) {
+      int index = 0;
+      if (m_root.m_points.get(m_indexes.get(i)).x > m_middle.x) {
+         index+=4;
+      }
+      if (m_root.m_points.get(m_indexes.get(i)).y > m_middle.y)
+      {
+         index+=2;
+      }
+      if (m_root.m_points.get(m_indexes.get(i)).z > m_middle.z)
+      {
+         index+=1;
+      }
+      m_children[index].m_indexes.add(m_indexes.get(i));
+      // Calculating centroid distribution (divided by the number of points below)
+      m_children[index].m_centroid = m_children[index].m_centroid.add(m_root.m_points.get(m_indexes.get(i)));
+   }
+   
+   for (int i = 0; i < 8 ; i++) {
+      m_children[i].m_centroid = m_children[i].m_centroid.divide(m_children[i].m_indexes.size());
+      // Recursive subdivision 
+      m_children[i].subdivideFast();
    }
   }
   /**
