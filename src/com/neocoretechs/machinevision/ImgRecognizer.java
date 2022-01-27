@@ -39,7 +39,7 @@ import org.jtransforms.utils.IOUtils;
 
 import com.neocoretechs.relatrix.Relatrix;
 import com.neocoretechs.relatrix.client.RelatrixClient;
-import com.neocoretechs.relatrix.client.RemoteSubsetIterator;
+import com.neocoretechs.relatrix.client.RemoteSubSetIterator;
 
 public class ImgRecognizer {
 	static RelatrixClient rc = null;
@@ -106,7 +106,7 @@ public class ImgRecognizer {
 					ArrayList<Double> ad = null;
 					try {
 						//Iterator<?> it = Relatrix.findSubSet("?", map, "?", mape);
-						RemoteSubsetIterator it = rc.findSubSet("?", map, "?", mape);
+						RemoteSubSetIterator it = rc.findSubSet("?", map, "?", mape);
 						lowCat = null;
 						double rmsLow = Double.MAX_VALUE;
 						float lowCo = Float.MAX_VALUE;
@@ -202,21 +202,15 @@ public class ImgRecognizer {
 	*/
 	
 	public static void main(String[] args) throws Exception {
-		System.out.println("Image recognizer coming up.. source image dir "+args[0] != null ? args[0] : "DEFAULT");
-		if(args.length == 2) {
-			//Relatrix.setTablespaceDirectory(args[1]);
-			rc = new RelatrixClient(/*"C:/Users/jg/Relatrix/AMI"*/ args[1], "localhost", 9000);
-		} else {
-			if( args.length == 3 ) {
+		if(args.length == 3) {
 				//Relatrix.setRemoteDirectory(args[2]);
 				//Relatrix.setTablespaceDirectory(args[1]);
-				rc = new RelatrixClient(args[1], args[2],"localhost", 9000);
+				rc = new RelatrixClient(args[1], args[2], Integer.parseInt(args[3]));
 				//System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory()+" remote dir "+Relatrix.getRemoteDirectory());
 				//System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory()+" remote dir "+Relatrix.getRemoteDirectory());
-			} else {
-				System.out.println("Usage: java ImgRecognizer <dir with image files> <db log dir> [remote tablespace dir]");
+		} else {
+				System.out.println("Usage: java ImgRecognizer <local directory with image files> <local node> <remote server node> <server port>");
 				return;
-			}
 		}
 		/*
 		System.out.println("The following categories are present in the dataset:");

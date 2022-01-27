@@ -10,13 +10,14 @@ import java.text.ParseException;
 import java.util.Iterator;
 
 import com.neocoretechs.bigsack.DBPhysicalConstants;
+import com.neocoretechs.relatrix.DuplicateKeyException;
 import com.neocoretechs.relatrix.Relatrix;
 import com.neocoretechs.relatrix.client.RelatrixClient;
 
 public class ImgLoader {
 	private static RelatrixClient rc;
 	
-	public static void getFiles(String dir) throws IOException, ParseException, IllegalAccessException {
+	public static void getFiles(String dir) throws IOException, ParseException, IllegalAccessException, DuplicateKeyException {
 		int totalRecords = 0;
 		Path path = FileSystems.getDefault().getPath(dir);
 		DirectoryStream<Path> files = Files.newDirectoryStream(path); 
@@ -55,8 +56,9 @@ public class ImgLoader {
 	 * @throws IOException
 	 * @throws ParseException
 	 * @throws IllegalAccessException 
+	 * @throws DuplicateKeyException 
 	 */
-	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException {
+	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException, DuplicateKeyException {
 				for(int i = 0; i < 256; i++) {
 					Float domain = new Float(a[i]);
 					Integer map = new Integer(i);
@@ -80,8 +82,8 @@ public class ImgLoader {
 			getFiles(args[0]);
 		} else {
 			if( args.length == 3 ) {
-				rc = new RelatrixClient(args[1], args[2],"localhost", 9000);
-				System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory()+" remote dir "+Relatrix.getRemoteDirectory());
+				rc = new RelatrixClient(args[1], args[2], 9000);
+				System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory());
 				getFiles(args[0]);
 			} else {
 				System.out.println("Usage: java ImgLoader <dir with image files> <db log dir> [remote tablespace dir]");

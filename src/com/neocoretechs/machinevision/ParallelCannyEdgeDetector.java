@@ -253,6 +253,7 @@ public class ParallelCannyEdgeDetector {
 		semiProcess();
 		thresholdEdges();
 		writeEdges(data);
+		SynchronizedFixedThreadPoolManager.shutdown();
 	}
 	
 	/**
@@ -347,7 +348,7 @@ public class ParallelCannyEdgeDetector {
 				final int xx = x;
 				final int xinitY = initY;
 				final int xmaxY = maxY;
-				SynchronizedFixedThreadPoolManager.getInstance(numThreads, execLimit, threadGroupName).spin(new Runnable() {
+				SynchronizedFixedThreadPoolManager.spin(new Runnable() {
 					@Override
 					public void run() {
 						// convolve xy
@@ -356,7 +357,7 @@ public class ParallelCannyEdgeDetector {
 				},threadGroupName); // spin
 				
 			}
-			SynchronizedFixedThreadPoolManager.getInstance().waitForGroupToFinish(threadGroupName);
+			SynchronizedFixedThreadPoolManager.waitForGroupToFinish(threadGroupName);
 		//-----
 		/**
 		for (int x = initX; x < maxX; x++) {
@@ -376,7 +377,7 @@ public class ParallelCannyEdgeDetector {
 			final int xinitY = initY;
 			final int xmaxY = maxY;
 			final float[] diffKernelx = diffKernel;
-			SynchronizedFixedThreadPoolManager.getInstance(numThreads, execLimit, threadGroupName).spin(new Runnable() {
+			SynchronizedFixedThreadPoolManager.spin(new Runnable() {
 				@Override
 				public void run() {
 					// gradient
@@ -385,7 +386,7 @@ public class ParallelCannyEdgeDetector {
 			},threadGroupName); // spin
 			
 		}
-		SynchronizedFixedThreadPoolManager.getInstance().waitForGroupToFinish(threadGroupName);
+		SynchronizedFixedThreadPoolManager.waitForGroupToFinish(threadGroupName);
 	
 		//-----
 		/**
@@ -411,7 +412,7 @@ public class ParallelCannyEdgeDetector {
 			final int xinitY = initY;
 			final int xmaxY = maxY;
 			final float[] diffKernelx = diffKernel;
-			SynchronizedFixedThreadPoolManager.getInstance(numThreads, execLimit, threadGroupName).spin(new Runnable() {
+			SynchronizedFixedThreadPoolManager.spin(new Runnable() {
 				@Override
 				public void run() {
 					// gradient
@@ -420,7 +421,7 @@ public class ParallelCannyEdgeDetector {
 			},threadGroupName); // spin
 			
 		}
-		SynchronizedFixedThreadPoolManager.getInstance().waitForGroupToFinish(threadGroupName);
+		SynchronizedFixedThreadPoolManager.waitForGroupToFinish(threadGroupName);
 
 		/**
 		initX = kwidth;
@@ -515,7 +516,7 @@ public class ParallelCannyEdgeDetector {
 			final int xx = x;
 			final int xinitY = initY;
 			final int xmaxY = maxY;
-			SynchronizedFixedThreadPoolManager.getInstance(numThreads, execLimit, threadGroupName).spin(new Runnable() {
+			SynchronizedFixedThreadPoolManager.spin(new Runnable() {
 				@Override
 				public void run() {
 					// gradient
@@ -523,7 +524,7 @@ public class ParallelCannyEdgeDetector {
 				} // run									
 			},threadGroupName); // spin		
 		}
-		SynchronizedFixedThreadPoolManager.getInstance().waitForGroupToFinish(threadGroupName);
+		SynchronizedFixedThreadPoolManager.waitForGroupToFinish(threadGroupName);
 		//-----
 		if( TIMER )
 			System.out.println("ParallelCannyEdgeDetector.computeGradients time="+(System.currentTimeMillis()-etime));
@@ -796,11 +797,12 @@ public class ParallelCannyEdgeDetector {
 		} else if (type == BufferedImage.TYPE_3BYTE_BGR) {
             byte[] pixels = (byte[]) sourceImage.getData().getDataElements(0, 0, width, height, null);
             int offset = 0;
+            int index = 0;
             for (int i = 0; i < picsize; i++) {
                 int b = pixels[offset++] & 0xff;
                 int g = pixels[offset++] & 0xff;
                 int r = pixels[offset++] & 0xff;
-                data[i] = luminance(r, g, b);
+                data[index++] = luminance(r, g, b);
             }
         } else {
 			throw new IllegalArgumentException("Unsupported image type: " + type);

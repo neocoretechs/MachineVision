@@ -231,7 +231,9 @@ public class ImgProcessor {
 		  // spin all threads necessary for execution
 		  //
 		  for(int syStart = 0; syStart < execLimit; syStart++) {
-			SynchronizedFixedThreadPoolManager.getInstance(numThreads, execLimit).spin(new Runnable() {
+			  SynchronizedFixedThreadPoolManager sftpm = SynchronizedFixedThreadPoolManager.getInstance();
+			  sftpm.init(numThreads, execLimit);
+			  SynchronizedFixedThreadPoolManager.spin(new Runnable() {
 			  @Override
 			  public void run() {
 					imageToOctrees(dataL, imageLx, yStart.getAndIncrement(), camWidth, camHeight, nodel);
@@ -239,7 +241,7 @@ public class ImgProcessor {
 		    }); // spin
 		  } // for syStart
 		  try {
-			SynchronizedFixedThreadPoolManager.getInstance().waitForGroupToFinish();
+			SynchronizedFixedThreadPoolManager.waitForGroupToFinish();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -33,7 +33,9 @@ public class MeanColorGenerator {
 		threeChannel = three;
 		readImage();
 	}
-	
+	public void close() {
+		sourceImage.flush();
+	}
 	public int[] mean() {
 		mean = 0;
 		int t = 1;
