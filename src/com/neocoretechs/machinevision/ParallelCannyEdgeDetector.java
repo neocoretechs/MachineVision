@@ -343,7 +343,7 @@ public class ParallelCannyEdgeDetector {
 			//
 			// spin all threads necessary for execution of convolve in x and y
 			//
-			SynchronizedFixedThreadPoolManager.getInstance().init(numThreads, execLimit, threadGroupName);
+			SynchronizedFixedThreadPoolManager.init(numThreads, execLimit, new String[] {threadGroupName});
 			for(int x = initX; x < maxX; x++) {
 				final int xx = x;
 				final int xinitY = initY;
@@ -371,7 +371,7 @@ public class ParallelCannyEdgeDetector {
 		}
 		 */
 		//-----
-		SynchronizedFixedThreadPoolManager.getInstance().init(numThreads, execLimit, threadGroupName);
+		SynchronizedFixedThreadPoolManager.init(numThreads, execLimit, new String[] {threadGroupName});
 		for(int x = initX; x < maxX; x++) {
 			final int xx = x;
 			final int xinitY = initY;
@@ -406,7 +406,7 @@ public class ParallelCannyEdgeDetector {
 		//-----
 		execLimit = width - (2 * kwidth);
 		numThreads = Math.min(16, execLimit);
-		SynchronizedFixedThreadPoolManager.getInstance().init(numThreads, execLimit, threadGroupName);
+		SynchronizedFixedThreadPoolManager.init(numThreads, execLimit,new String[] { threadGroupName});
 		for (int x = kwidth; x < width - kwidth; x++) {
 			final int xx = x;
 			final int xinitY = initY;
@@ -511,7 +511,7 @@ public class ParallelCannyEdgeDetector {
 		maxY = width * (height - kwidth);
 		execLimit = maxX - initX;
 		numThreads = Math.min(16, execLimit);
-		SynchronizedFixedThreadPoolManager.getInstance().init(numThreads, execLimit, threadGroupName);
+		SynchronizedFixedThreadPoolManager.init(numThreads, execLimit, new String[] {threadGroupName});
 		for (int x = initX; x < maxX; x++) {
 			final int xx = x;
 			final int xinitY = initY;
