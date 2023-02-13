@@ -72,7 +72,9 @@ public class ParallelCannyEdgeDetector {
 	private String threadGroupName;
 	
 	// constructors
-	
+	public ParallelCannyEdgeDetector() {
+		this("EDGEDETECT");
+	}
 	/**
 	 * Constructs a new detector with default parameters.
 	 */
@@ -273,7 +275,7 @@ public class ParallelCannyEdgeDetector {
 		performHysteresis(low, high);
 		return data;
 	}
- 
+	
 	// private utility methods
 	
 	private void initArrays() {
@@ -343,7 +345,6 @@ public class ParallelCannyEdgeDetector {
 			//
 			// spin all threads necessary for execution of convolve in x and y
 			//
-			SynchronizedFixedThreadPoolManager.init(numThreads, execLimit, new String[] {threadGroupName});
 			for(int x = initX; x < maxX; x++) {
 				final int xx = x;
 				final int xinitY = initY;
@@ -371,7 +372,6 @@ public class ParallelCannyEdgeDetector {
 		}
 		 */
 		//-----
-		SynchronizedFixedThreadPoolManager.init(numThreads, execLimit, new String[] {threadGroupName});
 		for(int x = initX; x < maxX; x++) {
 			final int xx = x;
 			final int xinitY = initY;
@@ -406,7 +406,6 @@ public class ParallelCannyEdgeDetector {
 		//-----
 		execLimit = width - (2 * kwidth);
 		numThreads = Math.min(16, execLimit);
-		SynchronizedFixedThreadPoolManager.init(numThreads, execLimit,new String[] { threadGroupName});
 		for (int x = kwidth; x < width - kwidth; x++) {
 			final int xx = x;
 			final int xinitY = initY;
@@ -511,7 +510,6 @@ public class ParallelCannyEdgeDetector {
 		maxY = width * (height - kwidth);
 		execLimit = maxX - initX;
 		numThreads = Math.min(16, execLimit);
-		SynchronizedFixedThreadPoolManager.init(numThreads, execLimit, new String[] {threadGroupName});
 		for (int x = initX; x < maxX; x++) {
 			final int xx = x;
 			final int xinitY = initY;
@@ -808,6 +806,7 @@ public class ParallelCannyEdgeDetector {
 			throw new IllegalArgumentException("Unsupported image type: " + type);
 		}
 	}
+	
 	/**
 	 * Optional method to normalize contrast in data array using histogram.
 	 */

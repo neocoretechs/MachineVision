@@ -65,13 +65,13 @@ public class ImgLoader {
 					// and the range is category
 					//Comparable rel = 
 					//Relatrix.transactionalStore(domain, map, category);
-					rc.transactionalStore(domain,  map,  category);
+					rc.store(domain,  map,  category);
 					//System.out.println("Going to store "+category+" "+i);
 					//Relatrix.store(domain, map, category);
 					System.out.print("****************STORED "+category+" "+i+"\r");
 				}
 				//Relatrix.transactionCommit();
-				rc.transactionCommit();
+				//rc.transactionCommit();
 				System.out.println();
 	}
 	
