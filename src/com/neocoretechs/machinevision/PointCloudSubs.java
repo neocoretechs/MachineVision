@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
@@ -36,7 +37,7 @@ import com.neocoretechs.machinevision.hough3d.Vector4d;
 import com.neocoretechs.machinevision.hough3d.hough_settings;
 import com.neocoretechs.machinevision.hough3d.octree_t;
 import com.neocoretechs.machinevision.hough3d.writer_file;
-import com.neocoretechs.robocore.SynchronizedFixedThreadPoolManager;
+import com.neocoretechs.robocore.SynchronizedThreadManager;
 
 /**
  * Listen for pointcloud messages.
@@ -216,10 +217,9 @@ public class PointCloudSubs extends AbstractNodeMain {
 		for(int channels = 0; channels < CHANNELS; channels++) {
 			yStart[channels] = new AtomicInteger(0);
 		}
-		SynchronizedFixedThreadPoolManager.init(16, camHeight, new String[]{"BUILDOCTREEA"});
-		SynchronizedFixedThreadPoolManager.init(16, 64, new String[]{"PROCESSREGIONA"});
+		SynchronizedThreadManager.getInstance().init(new String[]{"BUILDOCTREEA","PROCESSREGIONA"});
 		final int execLimit = camHeight;
-		SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+		SynchronizedThreadManager.getInstance().spin(new Runnable() {
 				@Override
 				public void run() {
 					while(true) {
@@ -240,9 +240,9 @@ public class PointCloudSubs extends AbstractNodeMain {
 					  for(int channels = 0; channels < CHANNELS; channels++) {
 						  yStart[channels].set(0);
 					  }
-					  SynchronizedFixedThreadPoolManager.resetLatch(execLimit, "BUILDOCTREEA");
+					  Future<?>[] jobs = new Future<?>[execLimit];
 					  for(int syStart = 0; syStart < execLimit; syStart++) {
-					    	SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+					    	jobs[syStart] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
 					    		@Override
 					    		public void run() {
 					    			// Since we run a continuous loop inside run we have to have a way
@@ -256,7 +256,7 @@ public class PointCloudSubs extends AbstractNodeMain {
 					    		} // run
 					    	},"BUILDOCTREEA"); // spin
 					  }
-					  SynchronizedFixedThreadPoolManager.waitForGroupToFinish("BUILDOCTREEA");
+					  SynchronizedThreadManager.waitForCompletion(jobs);
 					  if( TIMER )
 						  System.out.println("Process time one="+(System.currentTimeMillis()-etime));
 					  latchOut.await();
@@ -289,9 +289,9 @@ public class PointCloudSubs extends AbstractNodeMain {
 						  yr.add(new int[]{iPosStart, iPosEnd});
 					  }
 					  // use channel 0
-					  SynchronizedFixedThreadPoolManager.resetLatch(leftYRange.get(0).size(), "PROCESSREGIONA");
+					  Future<?>[] jobs2 = new Future<?>[leftYRange.get(0).size()];
 					  for(int syStart = 0; syStart < leftYRange.get(0).size(); syStart++) {
-							SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+							jobs2[syStart] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
 								@Override
 								public void run() {
 									// set the left nodes with depth
@@ -300,7 +300,7 @@ public class PointCloudSubs extends AbstractNodeMain {
 								} // run
 							},"PROCESSREGIONA"); // spin
 					    } // for syStart
-					  SynchronizedFixedThreadPoolManager.waitForGroupToFinish("PROCESSREGIONA");
+					  SynchronizedThreadManager.waitForCompletion(jobs2);
 					  if( TIMER )
 							System.out.println("Process time two="+(System.currentTimeMillis()-etime));
 					  latchOut2.await();

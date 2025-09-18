@@ -17,7 +17,7 @@ import com.neocoretechs.relatrix.client.RelatrixClient;
 public class ImgLoader {
 	private static RelatrixClient rc;
 	
-	public static void getFiles(String dir) throws IOException, ParseException, IllegalAccessException, DuplicateKeyException {
+	public static void getFiles(String dir) throws IOException, ParseException, IllegalAccessException, DuplicateKeyException, ClassNotFoundException {
 		int totalRecords = 0;
 		Path path = FileSystems.getDefault().getPath(dir);
 		DirectoryStream<Path> files = Files.newDirectoryStream(path); 
@@ -57,11 +57,12 @@ public class ImgLoader {
 	 * @throws ParseException
 	 * @throws IllegalAccessException 
 	 * @throws DuplicateKeyException 
+	 * @throws ClassNotFoundException 
 	 */
-	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException, DuplicateKeyException {
+	public static void processPayload(float[] a, String category) throws IOException, ParseException, IllegalAccessException, DuplicateKeyException, ClassNotFoundException {
 				for(int i = 0; i < 256; i++) {
-					Float domain = new Float(a[i]);
-					Integer map = new Integer(i);
+					Float domain = a[i];
+					Integer map = i;
 					// and the range is category
 					//Comparable rel = 
 					//Relatrix.transactionalStore(domain, map, category);
@@ -83,7 +84,6 @@ public class ImgLoader {
 		} else {
 			if( args.length == 3 ) {
 				rc = new RelatrixClient(args[1], args[2], 9000);
-				System.out.println("Tablespace dir "+Relatrix.getTableSpaceDirectory());
 				getFiles(args[0]);
 			} else {
 				System.out.println("Usage: java ImgLoader <dir with image files> <db log dir> [remote tablespace dir]");

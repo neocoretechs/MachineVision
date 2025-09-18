@@ -38,8 +38,9 @@ import java.util.Set;
 import org.jtransforms.utils.IOUtils;
 
 import com.neocoretechs.relatrix.Relatrix;
+import com.neocoretechs.relatrix.Result;
 import com.neocoretechs.relatrix.client.RelatrixClient;
-import com.neocoretechs.relatrix.client.RemoteSubSetIterator;
+
 
 public class ImgRecognizer {
 	static RelatrixClient rc = null;
@@ -97,26 +98,25 @@ public class ImgRecognizer {
 
 				for(int i = 0; i < elementsToProcess; i++) {
 					num = 0;
-					Integer map = new Integer(i);
-					Integer mape = new Integer(i+1);
+					Integer map = i;
+					Integer mape = i+1;
 					boolean found = false;
 					// and the range is category
 					//Comparable rel = 
 					String lowCat = null;
 					ArrayList<Double> ad = null;
 					try {
-						//Iterator<?> it = Relatrix.findSubSet("?", map, "?", mape);
-						RemoteSubSetIterator it = rc.findSubSet("?", map, "?", mape);
+						Iterator it = rc.findSet('?', map, '?');
 						lowCat = null;
 						double rmsLow = Double.MAX_VALUE;
 						float lowCo = Float.MAX_VALUE;
-						while(rc.hasNext(it)/*it.hasNext()*/) {
-							Comparable[] res =(Comparable[]) rc.next(it);//it.next();
+						while(it.hasNext()) {
+							Result res = (Result) it.next();
 							++num;
 							//for(int j=0; j < res.length;j++) {
 							//	System.out.println("Res #:"+num+" component:"+j+"="+res[j]);
 							//}
-							Float cosn = (Float)res[0];
+							Float cosn = (Float)res.get(0);
 							//String categoryStored = (String)res[1];
 							// scale it based on significance
 							b[i] = (float) ( (((float)i/(float)elementsToProcess) * (a[i]-cosn)) + cosn);
@@ -126,14 +126,14 @@ public class ImgRecognizer {
 							//double rms = Math.abs(a[i]-b[i]);
 							if( rms < rmsLow ) {
 								rmsLow = rms;
-								lowCat = (String) res[1];
-								lowCo = (Float)res[0];
+								lowCat = (String) res.get(1);
+								lowCo = (Float)res.get(0);
 							} else
 								found = true;
 							//System.out.println("Index:"+i+" element:"+num+" cat:"+res[1]+" cos:"+a[i]+" "+b[i]+" RMS:"+rms);
 						}
 						// remove remote object
-						rc.close(it);
+						rc.close();
 						
 						if( lowCat != null ) {
 							//al.add(lastLow);
@@ -155,7 +155,7 @@ public class ImgRecognizer {
 						}
 						//System.out.println("Processed "+num+" entries for iteration "+i);
 						
-					} catch (IllegalArgumentException | ClassNotFoundException e) {
+					} catch (IllegalArgumentException e) {
 						e.printStackTrace();
 					}//(domain, map, category);
 	
@@ -212,17 +212,7 @@ public class ImgRecognizer {
 				System.out.println("Usage: java ImgRecognizer <local directory with image files> <local node> <remote server node> <server port>");
 				return;
 		}
-		/*
-		System.out.println("The following categories are present in the dataset:");
-		Iterator<?> it = Relatrix.findSet("*", "*", "?");
-		String tcat="";
-		while(it.hasNext()) {
-			Comparable<?>[] res = (Comparable[]) it.next();
-			if( tcat.equals(res[0]))  continue;
-			tcat = (String) res[0];
-			System.out.println("Category:"+res[0]+" len"+res.length);
-		}
-		*/
+
 		//processPayload();
 		getFiles(args[0]);
 		rc.close(); // close client

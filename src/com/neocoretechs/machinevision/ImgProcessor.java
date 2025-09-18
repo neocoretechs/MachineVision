@@ -18,6 +18,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
@@ -29,7 +30,7 @@ import org.jtransforms.utils.IOUtils;
 
 import com.neocoretechs.machinevision.hough3d.hough_settings;
 import com.neocoretechs.machinevision.hough3d.octree_t;
-import com.neocoretechs.robocore.SynchronizedFixedThreadPoolManager;
+import com.neocoretechs.robocore.SynchronizedThreadManager;
 
 public class ImgProcessor {
 	
@@ -230,22 +231,17 @@ public class ImgProcessor {
 		  //
 		  // spin all threads necessary for execution
 		  //
+		Future<?>[] jobs = new Future<?>[execLimit];
 		  for(int syStart = 0; syStart < execLimit; syStart++) {
-			  SynchronizedFixedThreadPoolManager sftpm = SynchronizedFixedThreadPoolManager.getInstance();
-			  sftpm.init(numThreads, execLimit);
-			  SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+			  SynchronizedThreadManager sftpm = SynchronizedThreadManager.getInstance();
+			  jobs[syStart] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
 			  @Override
 			  public void run() {
 					imageToOctrees(dataL, imageLx, yStart.getAndIncrement(), camWidth, camHeight, nodel);
 			  } // run
 		    }); // spin
 		  } // for syStart
-		  try {
-			SynchronizedFixedThreadPoolManager.waitForGroupToFinish();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		  SynchronizedThreadManager.waitForCompletion(jobs);
 		  System.out.println("Process time one="+(System.currentTimeMillis()-etime));
 	}
 	

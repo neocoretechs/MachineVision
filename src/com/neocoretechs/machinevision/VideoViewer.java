@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
@@ -50,7 +51,7 @@ import com.neocoretechs.machinevision.hough3d.Vector4d;
 import com.neocoretechs.machinevision.hough3d.hough_settings;
 import com.neocoretechs.machinevision.hough3d.octree_t;
 import com.neocoretechs.machinevision.hough3d.writer_file;
-import com.neocoretechs.robocore.SynchronizedFixedThreadPoolManager;
+import com.neocoretechs.robocore.SynchronizedThreadManager;
 
 /**
  * Create a disparity map for the left and right images taken from stereo cameras published to bus.
@@ -288,8 +289,7 @@ public class VideoViewer extends AbstractNodeMain
 		 * Wait at synch barrier for completion of all processing threads, then display disparity 
 		 */
 		final AtomicInteger yStart = new AtomicInteger(0);
-		SynchronizedFixedThreadPoolManager.getInstance().init(16, 16);
-		SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+		SynchronizedThreadManager.getInstance().spin(new Runnable() {
 				@Override
 				public void run() {
 					System.out.println("Processing "+camWidth+" by "+camHeight);
@@ -329,12 +329,12 @@ public class VideoViewer extends AbstractNodeMain
 					  //
 					  // spin all threads necessary for execution
 					  //
-					  SynchronizedFixedThreadPoolManager.resetLatch(execLimit);
+					  Future<?>[] jobs = new Future<?>[execLimit];
 					  for(int syStart = 0; syStart < execLimit; syStart++) {
 						//for(; threads < camHeight/corrWinSize; threads++) {
 						//System.out.println("Spinning thread "+yStart);
 						//ThreadPoolManager.getInstance().spin(new Runnable() {
-						SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+						jobs[syStart] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
 						  //int yStart = threads*corrWinSize;
 						  //int yEnd = yStart+corrWinSize-1;
 						  @Override
@@ -379,7 +379,7 @@ public class VideoViewer extends AbstractNodeMain
 					  //BlockingQueue<Runnable> bq = FixedThreadPoolManager.getInstance(camHeight-corrWinSize).getQueue();
 					  // wait for the y scan atomic counter to reach max
 					  //while(yStart.get() < camHeight-corrWinSize) Thread.sleep(1);
-					  SynchronizedFixedThreadPoolManager.waitForGroupToFinish();
+					  SynchronizedThreadManager.waitForCompletion(jobs);
 					  if( TIMER )
 						  System.out.println("Process time one="+(System.currentTimeMillis()-etime));
 					  latchOut.await();
@@ -407,7 +407,7 @@ public class VideoViewer extends AbstractNodeMain
 							indexDepth = Collections.synchronizedList(new ArrayList<IndexDepth>());
 							indexUnproc = Collections.synchronizedList(new ArrayList<IndexDepth>());
 							for(int syStart = 0; syStart < execLimit; syStart++) {
-								SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+								jobs[syStart] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
 									@Override
 									public void run() {
 										// set the left nodes with depth
@@ -415,7 +415,7 @@ public class VideoViewer extends AbstractNodeMain
 									} // run									
 								}); // spin
 							} // for syStart
-							SynchronizedFixedThreadPoolManager.getInstance().waitForGroupToFinish();
+							SynchronizedThreadManager.waitForCompletion(jobs);
 							if( TIMER )
 								System.out.println("Process time two="+(System.currentTimeMillis()-etime));
 							latchOut2.await();
@@ -435,9 +435,10 @@ public class VideoViewer extends AbstractNodeMain
 							final int nSize = nodelA.size();
 							final int nSizeT = Math.min(nodelA.size(), 32);
 							// gen 1 thread for each array element up to limit
-							SynchronizedFixedThreadPoolManager.init(nSizeT, nSize, new String[]{"SETPOINT"});
+							SynchronizedThreadManager.getInstance().init(new String[]{"SETPOINT"});
+							Future<?>[] jobs2 = new Future<?>[nSize];
 							for(int syStart = 0; syStart < nSize; syStart++) {
-								SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+								jobs2[syStart] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
 									@Override
 									public void run() {
 										// set the left nodes with depth
@@ -445,7 +446,7 @@ public class VideoViewer extends AbstractNodeMain
 									} // run									
 								},"SETPOINT"); // spin
 							} // for syStart
-							SynchronizedFixedThreadPoolManager.waitForGroupToFinish("SETPOINT");
+							SynchronizedThreadManager.waitForCompletion(jobs2);
 							if( TIMER )
 								System.out.println("Process time three="+(System.currentTimeMillis()-etime));
 							latchOut3.await();
@@ -495,8 +496,8 @@ public class VideoViewer extends AbstractNodeMain
 		 * notify waiting worker threads to process them.
 		 * Wait at synch barrier for completion of all processing threads, then display disparity 
 		 */
-		SynchronizedFixedThreadPoolManager.init(1, Integer.MAX_VALUE, new String[] {"SYSTEMX"});
-		SynchronizedFixedThreadPoolManager.spin(new Runnable() {			
+		SynchronizedThreadManager.getInstance().init(new String[] {"SYSTEMX"});
+		SynchronizedThreadManager.getInstance().spin(new Runnable() {			
 				public void run() {
 					System.out.println("Image queue..");
 					/**

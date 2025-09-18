@@ -22,6 +22,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
@@ -48,7 +49,7 @@ import com.neocoretechs.machinevision.hough3d.hough_settings;
 import com.neocoretechs.machinevision.hough3d.octree_t;
 import com.neocoretechs.machinevision.hough3d.writer_file;
 import com.neocoretechs.robocore.machine.bridge.RadixTree;
-import com.neocoretechs.robocore.SynchronizedFixedThreadPoolManager;
+import com.neocoretechs.robocore.SynchronizedThreadManager;
 import com.neocoretechs.robocore.machine.bridge.CircularBlockingDeque;
 /**
  * Create a disparity map for the left and right images taken from stereo cameras published to bus.
@@ -370,10 +371,9 @@ public class VideoProcessor extends AbstractNodeMain
 		for(int channels = 0; channels < CHANNELS; channels++) {
 			yStart[channels] = new AtomicInteger(0);
 		}
-		SynchronizedFixedThreadPoolManager.init(16, camHeight, new String[]{"BUILDOCTREEA"});
-		SynchronizedFixedThreadPoolManager.init(16, 64, new String[]{"MATCHREGIONA"});
+		SynchronizedThreadManager.getInstance().init(new String[]{"BUILDOCTREEA","MATCHREGIONA"});
 		final int execLimit = camHeight;
-		SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+		SynchronizedThreadManager.getInstance().spin(new Runnable() {
 				@Override
 				public void run() {
 					while(true) {
@@ -394,9 +394,9 @@ public class VideoProcessor extends AbstractNodeMain
 					  for(int channels = 0; channels < CHANNELS; channels++) {
 						  yStart[channels].set(0);
 					  }
-					  SynchronizedFixedThreadPoolManager.resetLatch(execLimit, "BUILDOCTREEA");
+					  Future<?>[] jobs = new Future<?>[execLimit];
 					  for(int syStart = 0; syStart < execLimit; syStart++) {
-					    	SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+					    	jobs[syStart] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
 					    		@Override
 					    		public void run() {
 					    			// Since we run a continuous loop inside run we have to have a way
@@ -410,7 +410,7 @@ public class VideoProcessor extends AbstractNodeMain
 					    		} // run
 					    	},"BUILDOCTREEA"); // spin
 					  }
-					  SynchronizedFixedThreadPoolManager.waitForGroupToFinish("BUILDOCTREEA");
+					  SynchronizedThreadManager.waitForCompletion(jobs);
 					  if( TIMER )
 						  System.out.println("Process time one="+(System.currentTimeMillis()-etime));
 					  latchOut.await();
@@ -450,9 +450,9 @@ public class VideoProcessor extends AbstractNodeMain
 					  }
 					  //indexDepth = Collections.synchronizedList(new ArrayList<envInterface>());
 					  indexUnproc = Collections.synchronizedList(new ArrayList<envInterface>());
-					  SynchronizedFixedThreadPoolManager.resetLatch(leftYRange.get(0).size(), "MATCHREGIONA");
+					  Future<?>[] jobs2 = new Future<?>[leftYRange.get(0).size()];
 					  for(int syStart = 0; syStart < leftYRange.get(0).size(); syStart++) {
-							SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+							jobs2[syStart] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
 								@Override
 								public void run() {
 									// set the left nodes with depth
@@ -462,7 +462,7 @@ public class VideoProcessor extends AbstractNodeMain
 								} // run									
 							},"MATCHREGIONA"); // spin
 					    } // for syStart
-					  SynchronizedFixedThreadPoolManager.waitForGroupToFinish("MATCHREGIONA");
+					  SynchronizedThreadManager.waitForCompletion(jobs2);
 					  if( TIMER )
 							System.out.println("Process time two="+(System.currentTimeMillis()-etime));
 					  latchOut2.await();
@@ -477,7 +477,7 @@ public class VideoProcessor extends AbstractNodeMain
 		 * notify waiting worker threads to process them.
 		 * Wait at synch barrier for completion of all processing threads, then display disparity 
 		 */
-		SynchronizedFixedThreadPoolManager.spin(new Runnable() {			
+		SynchronizedThreadManager.getInstance().spin(new Runnable() {			
 				public void run() {
 					//double meanRMS = 0;
 					//double varianceRMS = 0;
@@ -2682,7 +2682,7 @@ public class VideoProcessor extends AbstractNodeMain
 			public void spinGen() {
 				if(DEBUG)
 					System.out.println("Spinning Left Pixels to Model Generator");
-				SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+				SynchronizedThreadManager.getInstance().spin(new Runnable() {
 					@Override
 					public void run() {			
 						while(true) {
@@ -2703,7 +2703,7 @@ public class VideoProcessor extends AbstractNodeMain
 				});
 				if(DEBUG)
 					System.out.println("Spinning Right Pixels to Model Generator");
-				SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+				SynchronizedThreadManager.getInstance().spin(new Runnable() {
 					@Override
 					public void run() {	
 						while(true) {

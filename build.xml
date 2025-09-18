@@ -33,13 +33,19 @@
     <mkdir dir="${bin.dir}" />
   </target>
 
-  <!-- Compiles the java code (including the usage of library for JUnit -->
-  <target name="compile" depends="makedir">
-    <javac compiler="modern" srcdir="${src.dir}" destdir="${build.dir}" >
-  		<classpath refid="master-classpath"/>
-    </javac>
+	  <!-- Compiles the java code (including the usage of library for JUnit -->
+	  <target name="compile" depends="makedir">
+	    <!--<javac compiler="modern" srcdir="${src.dir}" destdir="${build.dir}" >
+	  		<classpath refid="master-classpath"/>
+	    </javac>-->
+	  	<javac srcdir="${src.dir}" destdir="${build.dir}" source="25" target="25" includeantruntime="false">
+	  	  <compilerarg value="--enable-preview"/>
+	  	  <compilerarg value="--add-modules"/>
+	  	  <compilerarg value="jdk.incubator.vector"/>
+	  	  <classpath refid="master-classpath"/>
+	  	</javac>
 
-  </target>
+	  </target>
 
 	<target name="copy" depends="jar">
 		<copy file="${bin.dir}/MachineVision.jar" todir="C:/Program Files/Apache/apache-tomcat/lib"/>

@@ -2,8 +2,9 @@ package com.neocoretechs.machinevision;
 
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.concurrent.Future;
 
-import com.neocoretechs.robocore.SynchronizedFixedThreadPoolManager;
+import com.neocoretechs.robocore.SynchronizedThreadManager;
 
 /**
  * <p><em>This software has been released into the public domain.
@@ -255,7 +256,7 @@ public class ParallelCannyEdgeDetector {
 		semiProcess();
 		thresholdEdges();
 		writeEdges(data);
-		SynchronizedFixedThreadPoolManager.shutdown();
+		SynchronizedThreadManager.getInstance().shutdown();
 	}
 	
 	/**
@@ -315,218 +316,198 @@ public class ParallelCannyEdgeDetector {
 		int initY = width * (kwidth - 1);
 		int maxY = width * (height - (kwidth - 1));
 		
-		//perform convolution in x and y directions
-		/*
-		for (int x = initX; x < maxX; x++) {
-			for (int y = initY; y < maxY; y += width) {
-				int index = x + y;
-				float sumX = data[index] * kernel[0];
-				float sumY = sumX;
-				int xOffset = 1;
-				int yOffset = width;
-				for(; xOffset < kwidth ;) {
-					sumY += kernel[xOffset] * (data[index - yOffset] + data[index + yOffset]);
-					sumX += kernel[xOffset] * (data[index - xOffset] + data[index + xOffset]);
-					yOffset += width;
-					xOffset++;
-				}
-				
-				yConv[index] = sumY;
-				xConv[index] = sumX;
-			}
-		}
-		*/
-		//-----
-		try {
-			long etime = System.currentTimeMillis();
-			int execLimit = (maxX-initX);
-			int numThreads = Math.min(16, execLimit);
-			final int kkwidth = kwidth;
-			//
-			// spin all threads necessary for execution of convolve in x and y
-			//
-			for(int x = initX; x < maxX; x++) {
-				final int xx = x;
-				final int xinitY = initY;
-				final int xmaxY = maxY;
-				SynchronizedFixedThreadPoolManager.spin(new Runnable() {
-					@Override
-					public void run() {
-						// convolve xy
-						convolveXY(xx, xinitY, xmaxY, kkwidth, kernel);
-					} // run									
-				},threadGroupName); // spin
-				
-			}
-			SynchronizedFixedThreadPoolManager.waitForGroupToFinish(threadGroupName);
-		//-----
-		/**
-		for (int x = initX; x < maxX; x++) {
-			for (int y = initY; y < maxY; y += width) {
-				float sum = 0f;
-				int index = x + y;
-				for (int i = 1; i < kwidth; i++)
-					sum += diffKernel[i] * (yConv[index - i] - yConv[index + i]);
-				xGradient[index] = sum;
-			}
-		}
-		 */
-		//-----
+		long etime = System.currentTimeMillis();
+		int execLimit = (maxX-initX);
+		final int kkwidth = kwidth;
+		//
+		// spin all threads necessary for execution of convolve in x and y
+		//
+		Future<?>[] jobs = new Future<?>[execLimit];
+		int jobCnt = 0;
 		for(int x = initX; x < maxX; x++) {
 			final int xx = x;
 			final int xinitY = initY;
 			final int xmaxY = maxY;
-			final float[] diffKernelx = diffKernel;
-			SynchronizedFixedThreadPoolManager.spin(new Runnable() {
+			jobs[jobCnt++] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
 				@Override
 				public void run() {
-					// gradient
-					genXGradient(xx, xinitY, xmaxY, kkwidth, diffKernelx);
+					// convolve xy
+					convolveXY(xx, xinitY, xmaxY, kkwidth, kernel);
 				} // run									
 			},threadGroupName); // spin
 			
 		}
-		SynchronizedFixedThreadPoolManager.waitForGroupToFinish(threadGroupName);
-	
-		//-----
-		/**
-		for (int x = kwidth; x < width - kwidth; x++) {
-			for (int y = initY; y < maxY; y += width) {
-				float sum = 0.0f;
-				int index = x + y;
-				int yOffset = width;
-				for (int i = 1; i < kwidth; i++) {
-					sum += diffKernel[i] * (xConv[index - yOffset] - xConv[index + yOffset]);
-					yOffset += width;
-				}
-				yGradient[index] = sum;
-			}
+		SynchronizedThreadManager.waitForCompletion(jobs);
+//-----
+/**
+for (int x = initX; x < maxX; x++) {
+		for (int y = initY; y < maxY; y += width) {
+			float sum = 0f;
+			int index = x + y;
+			for (int i = 1; i < kwidth; i++)
+				sum += diffKernel[i] * (yConv[index - i] - yConv[index + i]);
+			xGradient[index] = sum;
 		}
-		 */
-		//-----
-		execLimit = width - (2 * kwidth);
-		numThreads = Math.min(16, execLimit);
-		for (int x = kwidth; x < width - kwidth; x++) {
-			final int xx = x;
-			final int xinitY = initY;
-			final int xmaxY = maxY;
-			final float[] diffKernelx = diffKernel;
-			SynchronizedFixedThreadPoolManager.spin(new Runnable() {
-				@Override
-				public void run() {
-					// gradient
-					genYGradient(xx, xinitY, xmaxY, kkwidth, diffKernelx);
-				} // run									
-			},threadGroupName); // spin
+}
+ */
+//-----
+jobCnt = 0;
+for(int x = initX; x < maxX; x++) {
+		final int xx = x;
+		final int xinitY = initY;
+		final int xmaxY = maxY;
+		final float[] diffKernelx = diffKernel;
+		jobs[jobCnt++] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
+			@Override
+			public void run() {
+				// gradient
+				genXGradient(xx, xinitY, xmaxY, kkwidth, diffKernelx);
+			} // run									
+		},threadGroupName); // spin
+		
+}
+SynchronizedThreadManager.waitForCompletion(jobs);
+
+//-----
+/**
+for (int x = kwidth; x < width - kwidth; x++) {
+		for (int y = initY; y < maxY; y += width) {
+			float sum = 0.0f;
+			int index = x + y;
+			int yOffset = width;
+			for (int i = 1; i < kwidth; i++) {
+				sum += diffKernel[i] * (xConv[index - yOffset] - xConv[index + yOffset]);
+				yOffset += width;
+			}
+			yGradient[index] = sum;
+		}
+}
+ */
+//-----
+execLimit = (width - kwidth) - kwidth;
+jobCnt = 0;
+Future<?>[] jobs2 = new Future<?>[width-kwidth];
+for (int x = kwidth; x < width - kwidth; x++) {
+		final int xx = x;
+		final int xinitY = initY;
+		final int xmaxY = maxY;
+		final float[] diffKernelx = diffKernel;
+		jobs2[jobCnt++] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
+			@Override
+			public void run() {
+				// gradient
+				genYGradient(xx, xinitY, xmaxY, kkwidth, diffKernelx);
+			} // run									
+		},threadGroupName); // spin
+		
+}
+SynchronizedThreadManager.waitForCompletion(jobs);
+
+/**
+initX = kwidth;
+maxX = width - kwidth;
+initY = width * kwidth;
+maxY = width * (height - kwidth);
+for (int x = initX; x < maxX; x++) {
+		for (int y = initY; y < maxY; y += width) {
+			int index = x + y;
+			int indexN = index - width;
+			int indexS = index + width;
+			int indexW = index - 1;
+			int indexE = index + 1;
+			int indexNW = indexN - 1;
+			int indexNE = indexN + 1;
+			int indexSW = indexS - 1;
+			int indexSE = indexS + 1;
 			
-		}
-		SynchronizedFixedThreadPoolManager.waitForGroupToFinish(threadGroupName);
+			float xGrad = xGradient[index];
+			float yGrad = yGradient[index];
+			float gradMag = hypot(xGrad, yGrad);
 
-		/**
-		initX = kwidth;
-		maxX = width - kwidth;
-		initY = width * kwidth;
-		maxY = width * (height - kwidth);
-		for (int x = initX; x < maxX; x++) {
-			for (int y = initY; y < maxY; y += width) {
-				int index = x + y;
-				int indexN = index - width;
-				int indexS = index + width;
-				int indexW = index - 1;
-				int indexE = index + 1;
-				int indexNW = indexN - 1;
-				int indexNE = indexN + 1;
-				int indexSW = indexS - 1;
-				int indexSE = indexS + 1;
-				
-				float xGrad = xGradient[index];
-				float yGrad = yGradient[index];
-				float gradMag = hypot(xGrad, yGrad);
-
-				//perform non-maximal supression
-				float nMag = hypot(xGradient[indexN], yGradient[indexN]);
-				float sMag = hypot(xGradient[indexS], yGradient[indexS]);
-				float wMag = hypot(xGradient[indexW], yGradient[indexW]);
-				float eMag = hypot(xGradient[indexE], yGradient[indexE]);
-				float neMag = hypot(xGradient[indexNE], yGradient[indexNE]);
-				float seMag = hypot(xGradient[indexSE], yGradient[indexSE]);
-				float swMag = hypot(xGradient[indexSW], yGradient[indexSW]);
-				float nwMag = hypot(xGradient[indexNW], yGradient[indexNW]);
-				float tmp;
-				//
-				// An explanation of what's happening here, for those who want
-				// to understand the source: This performs the "non-maximal
-				// supression" phase of the Canny edge detection in which we
-				// need to compare the gradient magnitude to that in the
-				// direction of the gradient; only if the value is a local
-				// maximum do we consider the point as an edge candidate.
-				// 
-				// We need to break the comparison into a number of different
-				// cases depending on the gradient direction so that the
-				// appropriate values can be used. To avoid computing the
-				// gradient direction, we use two simple comparisons: first we
-				// check that the partial derivatives have the same sign (1)
-				// and then we check which is larger (2). As a consequence, we
-				// have reduced the problem to one of four identical cases that
-				// each test the central gradient magnitude against the values at
-				// two points with 'identical support'; what this means is that
-				// the geometry required to accurately interpolate the magnitude
-				// of gradient function at those points has an identical
-				// geometry (upto right-angled-rotation/reflection).
-				// 
-				// When comparing the central gradient to the two interpolated
-				// values, we avoid performing any divisions by multiplying both
-				// sides of each inequality by the greater of the two partial
-				// derivatives. The common comparand is stored in a temporary
-				// variable (3) and reused in the mirror case (4).
-				// 
-				//
-				if (xGrad * yGrad <= (float) 0 
-					? Math.abs(xGrad) >= Math.abs(yGrad) 
-						? (tmp = Math.abs(xGrad * gradMag)) >= Math.abs(yGrad * neMag - (xGrad + yGrad) * eMag) 
-							&& tmp > Math.abs(yGrad * swMag - (xGrad + yGrad) * wMag) 
-						: (tmp = Math.abs(yGrad * gradMag)) >= Math.abs(xGrad * neMag - (yGrad + xGrad) * nMag) 
-							&& tmp > Math.abs(xGrad * swMag - (yGrad + xGrad) * sMag) 
-					: Math.abs(xGrad) >= Math.abs(yGrad) 
-						? (tmp = Math.abs(xGrad * gradMag)) >= Math.abs(yGrad * seMag + (xGrad - yGrad) * eMag) 
-							&& tmp > Math.abs(yGrad * nwMag + (xGrad - yGrad) * wMag) 
-						: (tmp = Math.abs(yGrad * gradMag)) >= Math.abs(xGrad * seMag + (yGrad - xGrad) * sMag) 
-							&& tmp > Math.abs(xGrad * nwMag + (yGrad - xGrad) * nMag) 
-					) {
-					magnitude[index] = gradMag >= MAGNITUDE_LIMIT ? MAGNITUDE_MAX : (int) (MAGNITUDE_SCALE * gradMag);
-					//NOTE: The orientation of the edge is not employed by this
-					//implementation. It is a simple matter to compute it at
-					//this point as: Math.atan2(yGrad, xGrad);
-				} else {
-					magnitude[index] = 0;
-				}
+			//perform non-maximal supression
+			float nMag = hypot(xGradient[indexN], yGradient[indexN]);
+			float sMag = hypot(xGradient[indexS], yGradient[indexS]);
+			float wMag = hypot(xGradient[indexW], yGradient[indexW]);
+			float eMag = hypot(xGradient[indexE], yGradient[indexE]);
+			float neMag = hypot(xGradient[indexNE], yGradient[indexNE]);
+			float seMag = hypot(xGradient[indexSE], yGradient[indexSE]);
+			float swMag = hypot(xGradient[indexSW], yGradient[indexSW]);
+			float nwMag = hypot(xGradient[indexNW], yGradient[indexNW]);
+			float tmp;
+			//
+			// An explanation of what's happening here, for those who want
+			// to understand the source: This performs the "non-maximal
+			// supression" phase of the Canny edge detection in which we
+			// need to compare the gradient magnitude to that in the
+			// direction of the gradient; only if the value is a local
+			// maximum do we consider the point as an edge candidate.
+			// 
+			// We need to break the comparison into a number of different
+			// cases depending on the gradient direction so that the
+			// appropriate values can be used. To avoid computing the
+			// gradient direction, we use two simple comparisons: first we
+			// check that the partial derivatives have the same sign (1)
+			// and then we check which is larger (2). As a consequence, we
+			// have reduced the problem to one of four identical cases that
+			// each test the central gradient magnitude against the values at
+			// two points with 'identical support'; what this means is that
+			// the geometry required to accurately interpolate the magnitude
+			// of gradient function at those points has an identical
+			// geometry (upto right-angled-rotation/reflection).
+			// 
+			// When comparing the central gradient to the two interpolated
+			// values, we avoid performing any divisions by multiplying both
+			// sides of each inequality by the greater of the two partial
+			// derivatives. The common comparand is stored in a temporary
+			// variable (3) and reused in the mirror case (4).
+			// 
+			//
+			if (xGrad * yGrad <= (float) 0 
+				? Math.abs(xGrad) >= Math.abs(yGrad) 
+					? (tmp = Math.abs(xGrad * gradMag)) >= Math.abs(yGrad * neMag - (xGrad + yGrad) * eMag) 
+						&& tmp > Math.abs(yGrad * swMag - (xGrad + yGrad) * wMag) 
+					: (tmp = Math.abs(yGrad * gradMag)) >= Math.abs(xGrad * neMag - (yGrad + xGrad) * nMag) 
+						&& tmp > Math.abs(xGrad * swMag - (yGrad + xGrad) * sMag) 
+				: Math.abs(xGrad) >= Math.abs(yGrad) 
+					? (tmp = Math.abs(xGrad * gradMag)) >= Math.abs(yGrad * seMag + (xGrad - yGrad) * eMag) 
+						&& tmp > Math.abs(yGrad * nwMag + (xGrad - yGrad) * wMag) 
+					: (tmp = Math.abs(yGrad * gradMag)) >= Math.abs(xGrad * seMag + (yGrad - xGrad) * sMag) 
+						&& tmp > Math.abs(xGrad * nwMag + (yGrad - xGrad) * nMag) 
+				) {
+				magnitude[index] = gradMag >= MAGNITUDE_LIMIT ? MAGNITUDE_MAX : (int) (MAGNITUDE_SCALE * gradMag);
+				//NOTE: The orientation of the edge is not employed by this
+				//implementation. It is a simple matter to compute it at
+				//this point as: Math.atan2(yGrad, xGrad);
+			} else {
+				magnitude[index] = 0;
 			}
 		}
-		*/
-		//-----		
-		initX = kwidth;
-		maxX = width - kwidth;
-		initY = width * kwidth;
-		maxY = width * (height - kwidth);
-		execLimit = maxX - initX;
-		numThreads = Math.min(16, execLimit);
-		for (int x = initX; x < maxX; x++) {
-			final int xx = x;
-			final int xinitY = initY;
-			final int xmaxY = maxY;
-			SynchronizedFixedThreadPoolManager.spin(new Runnable() {
-				@Override
-				public void run() {
-					// gradient
-					maxSuppression(xx, xinitY, xmaxY);
-				} // run									
-			},threadGroupName); // spin		
-		}
-		SynchronizedFixedThreadPoolManager.waitForGroupToFinish(threadGroupName);
-		//-----
-		if( TIMER )
-			System.out.println("ParallelCannyEdgeDetector.computeGradients time="+(System.currentTimeMillis()-etime));
-		} catch (InterruptedException e) { System.out.println("ParallelCannyEdgeDetector.computeGradients threading interrupted!"); }
+}
+*/
+//-----		
+initX = kwidth;
+maxX = width - kwidth;
+initY = width * kwidth;
+maxY = width * (height - kwidth);
+execLimit = maxX - initX;
+Future<?>[] jobs3 = new Future<?>[execLimit];
+jobCnt = 0;
+for (int x = initX; x < maxX; x++) {
+		final int xx = x;
+		final int xinitY = initY;
+		final int xmaxY = maxY;
+		jobs3[jobCnt++] = SynchronizedThreadManager.getInstance().submit(new Runnable() {
+			@Override
+			public void run() {
+				// gradient
+				maxSuppression(xx, xinitY, xmaxY);
+			} // run									
+		},threadGroupName); // spin		
+}
+SynchronizedThreadManager.waitForCompletion(jobs);
+//-----
+if( TIMER )
+		System.out.println("ParallelCannyEdgeDetector.computeGradients time="+(System.currentTimeMillis()-etime));
 	}
 	/**
 	 * Support for computeGradients parallel computation internal loops.
